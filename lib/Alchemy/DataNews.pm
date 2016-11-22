@@ -6,7 +6,7 @@ use Carp qw(croak cluck);
 use URI;
 use Try::Tiny;
 
-our $VERISON = '0.00';
+our $VERISON = '0.01';
 
 use constant ALCHEMY_ENDPOINT => 'https://gateway-a.watsonplatform.net/calls/data/GetNews';
 
