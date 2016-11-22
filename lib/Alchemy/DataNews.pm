@@ -340,7 +340,7 @@ sub _format_sentiment_query {
  
         if (my $type = $sentiment->{type}) {
             if (ref($type) and ref($type) eq 'ARRAY') {
-                $sent_string .= O[' . join '^', @$value . '],';
+                $sent_string .= 'O[' . join '^', @$value . '],';
             }
             else {
                 $sent_string .= $type . ',';
