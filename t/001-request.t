@@ -20,8 +20,9 @@ subtest 'Checking methods' => sub {
 
 subtest 'Testing search_news' => sub {
     my $search_url = $data->search_news({
-        company  => 'Google',
-        keywords => ['Deep Mind', 'Tensor Flow'],
+        # Default to searching text?
+        # Enable ArrayRefs has values, write recursive algorithm?
+        keywords => [ {title => 'Obama'}, {text => 'Trump'}],
         start    => {
             begin => 'now',
             end   => '2d',

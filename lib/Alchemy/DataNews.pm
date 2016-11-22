@@ -44,23 +44,25 @@ sub search_news {
     # or on method call
     $self->{_keywords} = $info->{keywords} if defined $info->{keywords};
 
-    my $company = $info->{company};
+    my $start_range  = "now-5h";
+    my $end_date     = 'now';
+#    my $start_range = defined $self->{_start}
+#      ? $self->{_start}
+#      : (defined $info->{start}
+#        ? $info->{start}
+#        : +{ begin => 'now', end => undef });
 
-    my $start_range = defined $self->{_start}
-      ? $self->{_start}
-      : (defined $info->{start}
-        ? $info->{start}
-        : +{ begin => 'now', end => undef });
+#    my $end_date = defined $self->{_end}
+#      ? $self->{_end}
+#      : (defined $info->{end}
+#        ? $info->{end}
+#        :  'now');
 
-    my $end_date = defined $self->{_end}
-      ? $self->{_end}
-      : (defined $info->{end}
-        ? $info->{end}
-        :  'now');
 
     my $query_form    = $self->_format_date_query($start_range, $end_date);
     my $keyword_form  = $self->_format_keyword_query;
-    my %query_form    = (%$keyword_form, %query_form);
+
+    my %query_form    = (%$keyword_form, %$query_form);
     my $search_query  = $self->_search_query(\%query_form);
 
     my $content;
@@ -102,20 +104,21 @@ sub _search_query {
 sub _format_date_query {
     my ($self, $start, $end) = @_;
 
-    croak "Missing required param : start" unless defined $start;
-    croak "Missing required param : end"   unless defined $end;
-    croak "Arg start must be a HashRef"    unless ref($start) eq 'HASH';
-
-    my $start_string;
-    if ( defined $start->{end} ) {
-        $start_string = $start->{begin} . "-" . $start->{end};
-    }
-    else {
-        $start_string = $start->{begin};
-    }
-
+#    croak "Missing required param : start" unless defined $start;
+#    croak "Missing required param : end"   unless defined $end;
+#    croak "Arg start must be a HashRef"    unless ref($start) eq 'HASH';
+#
+#    my $start_string;
+#    if ( defined $start->{end} ) {
+#        $start_string = $start->{begin} . "-" . $start->{end};
+#    }
+#    else {
+#        $start_string = $start->{begin};
+#    }
+#
     my $date_query = {
-        start => $start_string,
+        start => $start,
+#        start => $start_string,
         end   => $end,
     };
 
@@ -147,11 +150,11 @@ sub _format_keyword_query {
 
             if ($k eq 'title') {
                 $query_string = 'q.enriched.url.title';
-                $params->{$query_string} = "O[$search_string]";
+                $params->{$query_string} = 'O[' . $search_string . ']';
             }
             elsif ($k eq 'text') {
                 $query_string = 'q.enriched.url.text';
-                $query_string = "O[$search_string]";
+                $params->{$query_string} = 'O[' . $search_string . ']';
             }
         }
     }
@@ -178,12 +181,11 @@ sub _format_return_fields {
 
         $return_fields = join ',', @fields;
     }
+    else {
+        $return_fields = 'enriched.url.keywords';
+    }
     
-    my $params = {
-        return => $return_fields,
-    }; 
-
-    return $params;
+    return $return_fields,
 }
 
 1;
