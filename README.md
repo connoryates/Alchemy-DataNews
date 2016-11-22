@@ -2,6 +2,8 @@
 
 Alchemy::DataNews - Perl style queries for IBM Watson DataNews.
 
+Coming soon to a CPAN near you...
+
 # SYNOPSIS
 
 ```perl
