@@ -51,7 +51,7 @@ sub search_news {
     croak "Missing required arg : info" unless defined $info;
     croak "Arg info must be a HashRef"  unless ref($info) eq 'HASH';
 
-    # Allow the user to specify [keywords, taxonomies] on construction
+    # Allow the user to specify query methods on construction
     # or on method call
     $self->{_keywords}  = $info->{keywords}  if defined $info->{keywords};
     $self->{_taxonomy}  = $info->{taxonomy}  if defined $info->{taxonomy};
