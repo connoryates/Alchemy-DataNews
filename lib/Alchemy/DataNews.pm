@@ -10,14 +10,21 @@ our $VERISON = '0.00';
 
 use constant ALCHEMY_ENDPOINT => 'https://gateway-a.watsonplatform.net/calls/data/GetNews';
 
+our %UNIT_MAP = (
+    days    => 'd',
+    seconds => 's',
+    minutes => 'm',
+    months  => 'M',
+    years   => 'y',
+);
+
 sub new {
     my ($class, %data) = @_;
 
     croak "No API key!" unless defined $data{api_key};
 
     my $self = bless {
-        _end             => $data{end}             || undef,
-        _start           => $data{start}           || undef,
+        _timeframe       => $data{timeframe}       || undef,
         _debug           => $data{debug}           || 0,
         _max_results     => $data{max_results}     || undef,
         _next_page       => $data{next_page}       || undef,
@@ -44,26 +51,12 @@ sub search_news {
     # or on method call
     $self->{_keywords} = $info->{keywords} if defined $info->{keywords};
 
-    my $start_range  = "now-5h";
-    my $end_date     = 'now';
-#    my $start_range = defined $self->{_start}
-#      ? $self->{_start}
-#      : (defined $info->{start}
-#        ? $info->{start}
-#        : +{ begin => 'now', end => undef });
+    my $timeframe    = $info->{timeframe};
+    my $query_form   = $self->_format_date_query($timeframe);
+    my $keyword_form = $self->_format_keyword_query;
 
-#    my $end_date = defined $self->{_end}
-#      ? $self->{_end}
-#      : (defined $info->{end}
-#        ? $info->{end}
-#        :  'now');
-
-
-    my $query_form    = $self->_format_date_query($start_range, $end_date);
-    my $keyword_form  = $self->_format_keyword_query;
-
-    my %query_form    = (%$keyword_form, %$query_form);
-    my $search_query  = $self->_search_query(\%query_form);
+    my %query_form   = (%$keyword_form, %$query_form);
+    my $search_query = $self->_search_query(\%query_form);
 
     my $content;
     try {
@@ -102,24 +95,26 @@ sub _search_query {
 }
 
 sub _format_date_query {
-    my ($self, $start, $end) = @_;
+    my ($self, $timeframe) = @_;
 
-#    croak "Missing required param : start" unless defined $start;
-#    croak "Missing required param : end"   unless defined $end;
-#    croak "Arg start must be a HashRef"    unless ref($start) eq 'HASH';
-#
-#    my $start_string;
-#    if ( defined $start->{end} ) {
-#        $start_string = $start->{begin} . "-" . $start->{end};
-#    }
-#    else {
-#        $start_string = $start->{begin};
-#    }
-#
+    croak "Missing required param : timeframe"  unless defined $timeframe;
+    croak "Arg timeframe must be a HashRef" unless ref($timeframe) eq 'HASH';
+
+    my $start = $timeframe->{start};
+    
+    my $start_string;
+    if ( defined $time->{end} ) {
+        my $unit = $UNIT_MAP{ $start->{unit} };
+
+        $start_string = $start->{date} . "-" . $start->{amount_before} . $unit;
+    }
+    else {
+        $start_string = "now-2d";
+    }
+
     my $date_query = {
-        start => $start,
-#        start => $start_string,
-        end   => $end,
+        start => $start_string,
+        end   => $timeframe->{end} || 'now',
     };
 
     return $date_query;

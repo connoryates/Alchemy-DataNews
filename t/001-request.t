@@ -22,11 +22,22 @@ subtest 'Testing search_news' => sub {
     my $search_url = $data->search_news({
         # Default to searching text?
         # Enable ArrayRefs has values, write recursive algorithm?
-        keywords => [ {title => 'Obama'}, {text => 'Trump'}],
-        start    => {
-            begin => 'now',
-            end   => '2d',
-        },
+        keywords => [
+            {
+                title => 'Obama'
+            },
+            {
+                text => 'Trump'
+            }
+        ],
+        timeframe => {
+           start => {
+                date          => 'now',
+                amount_before => '2',
+                unit          => 'days'
+            },
+            end => 'now',
+        }
     });
 
     use Data::Dumper;
