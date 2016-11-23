@@ -83,6 +83,11 @@ sub next {
     my $query = shift || $LAST_QUERY;
     my $next  = shift || $NEXT;
 
+    croak "Cannot call method next without a defined next value"
+      unless defined $next;
+
+    croak "No query cached or specified" unless defined $query;
+
     my $uri = URI->new($query);
        $uri->query_form( next => $next );
 

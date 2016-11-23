@@ -271,9 +271,61 @@ The ```score``` key corresponds to Watson's calculated sentiment score, and the 
 
 Valid operators are: ```>=```, ```<=```, ```<```, ```>```, and ```=```
 
+# QUERY ATTRIBUTES
+
+When you specify an ArrayRef as a value, the default is to search by OR. You can specify AND like so:
+
+```perl
+my $alchemy = Alchemy::DataNews->new(
+    api_key => $API_KEY,
+    timeframe => {
+        start => {
+            date          => 'now',
+            amount_before => '2',
+            unit          => 'days'
+        },
+        end => 'now',
+    }
+    keywords => [
+        { title => 'Net Neutrality' },
+        { text  => ['FCC', 'merger', 'Time Warner Cable', 'Google'] },
+    ],
+    join => 'AND',
+);
+```
+
+This will then set the default search to AND for the rest of the instance.
+
+However, each nested level will override the default, so you can specify more complex custom queries like so:
+
+```perl
+my $alchemy = Alchemy::DataNews->new(
+    api_key => $API_KEY,
+    timeframe => {
+        start => {
+            date          => 'now',
+            amount_before => '2',
+            unit          => 'days'
+        },
+        end => 'now',
+    }
+    keywords => [
+        {
+            title => 'Net Neutrality'
+        },
+        {
+            text  => ['FCC', 'merger', 'Time Warner Cable', 'Google'],
+            join => 'AND'
+        },
+    ],
+);
+```
+
 # INSTANCE METHODS
 
 ```search_news``` - formats and sends the REST request to Watson
+
+```next``` - returns the next page of results
 
 # AUTHOR
 
