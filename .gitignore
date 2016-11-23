@@ -1,0 +1,7 @@
+/Alchemy-DataNews-*
+/.build
+/_build*
+/Build
+MYMETA.*
+!META.json
+/.prove
