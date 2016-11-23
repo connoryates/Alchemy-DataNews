@@ -69,8 +69,8 @@ sub search_news {
     $self->{_exact_match} = $info->{exact_match} if defined $info->{exact_match};
     $self->{_join}        = $info->{join}        if defined $info->{join};
 
-    my %query_form   = %{ $self->_format_date_query || +{} };
-    my $formatted    = $self->_format_form(\%query_form);
+    my $query_form   = $self->_format_date_query;
+    my $formatted    = $self->_format_queries($query_form);
     my $search_query = $self->_search_news($formatted);
 
     $LAST_QUERY = $search_query;
