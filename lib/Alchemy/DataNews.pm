@@ -362,7 +362,7 @@ sub _format_sentiment_query {
                 my $value    = $score->{value};
                 my $operator = $score->{operator};
 
-                unless ($operator =~ /(?:<|<=|>=|=)/) {
+                unless ($operator =~ /(?:<|<=|>=|=|>)/) {
                     cluck "Invalid operator, cannot format sentiment query";
                     return undef;
                 }
