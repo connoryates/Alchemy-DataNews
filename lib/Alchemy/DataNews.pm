@@ -1,5 +1,8 @@
 package Alchemy::DataNews;
 
+use strict;
+use 5.008_005;
+
 use Furl;
 use JSON::XS qw(decode_json);
 use Carp qw(croak cluck);
@@ -174,7 +177,7 @@ sub _format_date_query {
     my $start = $timeframe->{start};
     
     my $start_string;
-    if ( defined $time->{end} ) {
+    if ( defined $start and ref($start) and ref($start) eq 'HASH') {
         my $unit = $UNIT_MAP{ $start->{unit} };
 
         $start_string = $start->{date} . "-" . $start->{amount_before} . $unit;
@@ -255,7 +258,7 @@ sub _format_keywords_query {
             $prefix = $self->__get_prefix($keywords->{join});
         }
         while (my ($type, $value) = each %$keywords) {
-            my $query_string;
+            my ($query_string, $search_string);
 
             if (ref($value) eq 'ARRAY') {
                 $search_string = join '^', @$value;
@@ -276,7 +279,7 @@ sub _format_keywords_query {
         }
     }
     else {
-        $query_string = 'q.enriched.url.text';
+        my $query_string = 'q.enriched.url.text';
         $params->{$query_string} = $keywords;
     }
 
@@ -335,7 +338,7 @@ sub _format_entity_query {
     my $type_query   = 'q.enriched.url.enrichedTitle.entities.entity.type';
     my $entity_query = 'q.enriched.url.enrichedTitle.entities.entity.text';
 
-    while ( ($type, $value) = each %$entity ) {
+    while ( my ($type, $value) = each %$entity ) {
         if (ref($value) and ref($value) eq 'ARRAY') {
             my $search_string = join '^', @{ $value };
 
@@ -505,3 +508,376 @@ sub __get_prefix {
 }
 
 1;
+
+__END__
+
+=encoding utf-8
+
+=head1 NAME
+
+Alchemy::DataNews - Query Watson's Alchemy DataNews API with Perl syntax
+
+=head1 SYNOPSIS
+
+  use Alchemy::DataNews;
+
+
+  my $alchemy = Alchemy::DataNews->new(
+      api_key => $API_KEY
+  );
+
+  my $results = $alchemy->search_news({
+      keywords => [
+          {
+              title => ['Obama', 'Biden'],
+          },
+          {
+              text => 'Trump'
+          }
+      ],
+      timeframe => {
+         start => {
+             date          => 'now',
+             amount_before => '2',
+             unit          => 'days'
+         },
+         end => 'now',
+      }
+  });
+
+=head1 DESCRIPTION
+
+Alchemy::DataNews is a client for IBM Watson's Alchemy DataNews API. The API is a very powerful
+REST API capable of searching keywords, semantics, tied action words, and word relationships
+across given timeframes. For specific examples of what the API is capable of, please read:
+http://docs.alchemyapi.com/docs/
+
+This module will map Perl syntax into the REST parameters that Watson's DataNews API uses - similar to how ```DBIC``` works.
+
+=head1 CREDENTIALS
+
+You will need the `username` and `password` credentials for each service. Service credentials are different from your Bluemix account username and password.
+
+To get your service credentials, follow these steps:
+ 1. Log in to Bluemix at https://bluemix.net.
+
+ 1. Create an instance of the service:
+     1. In the Bluemix **Catalog**, select the Watson service you want to use. For example, select the Natural Language Classifier service.
+     1. Under **Add Service**, type a unique name for the service instance in the Service name field. For example, type `my-service-name`. Leave the default values for the other options.
+     1. Click **Use**.
+
+ 1. Copy your credentials:
+     1. On the left side of the page, click **Service Credentials** to view your service credentials.
+     1. Copy `username` and `password` from these service credentials.
+
+=head1 CONSTRUCTOR
+
+This module gives you the option to specify your search paramters during construction or during your method calls.
+
+  my $alchemy = Alchemy::DataNews->new(
+      api_key   => $API_KEY,
+      keywords  => { title => 'Net Neutrality' },
+      timeframe => {
+          start => {
+              date          => 'now',
+              amount_before => '2',
+              unit          => 'hours'
+          },
+          end => 'now',
+      }
+   );
+
+  $alchemy->search_news;
+
+ -- OR --
+
+  my $alchemy = Alchemy::DataNews->new(
+      api_key   => $API_KEY,
+  );
+
+  $alchemy->search_news({
+      keywords  => { title => 'Net Neutrality' },
+      timeframe => {
+          start => {
+              date          => 'now',
+              amount_before => '2',
+              unit          => 'hours'
+          },
+          end => 'now',
+     }
+  });
+
+
+Note that specifying search params during the method call will overwrite any params specified during construction.
+
+=head1 CLASS METHODS
+
+timeframe - Specifies a timeframe for you search. The start key indicates when your query should start looking and
+allows for dynamic use of `now`. For example:
+
+  timeframe => {
+      start => {
+          date          => 'now',
+          amount_before => '2',
+          unit          => 'days'
+      },
+      end => 'now',
+  }
+
+
+Will start the search beginning two days in the past from the current day and end on the current day. You don't have to specify an
+amount before of a unit of time though, you can specify dates as well.
+
+keywords - indicates what keywords you want to match in your searches. Takes a HashRef, ArrayRef of HashRefs, or a string.
+
+You may specify search terms that appear in either the title or the text like so:
+
+  my $alchemy = Alchemy::DataNews->new(
+      api_key => $API_KEY,
+      timeframe => {
+          start => {
+              date          => 'now',
+              amount_before => '2',
+              unit          => 'days'
+          },
+          end => 'now',
+      }
+      keywords => [
+          { title => 'Net Neutrality' },
+          { text  => 'FCC' },
+      ],
+  );
+
+You can also specify multiple keywords by using an ArrayRef as the value instead of a string:
+
+  my $alchemy = Alchemy::DataNews->new(
+      api_key => $API_KEY,
+      timeframe => {
+          start => {
+              date          => 'now',
+              amount_before => '2',
+              unit          => 'days'
+          },
+          end => 'now',
+      }
+      keywords => [
+          {
+              title => 'Net Neutrality'
+          },
+          {
+              text  => [
+                  'FCC', 'merger', 'Time Warner Cable', 'Google'
+              ]
+          },
+      ],
+  );
+
+
+For the keywords query, the only available hash keys are title and text.
+
+
+taxonomy - Search based on classifications of news articles:
+
+  my $alchemy = Alchemy::DataNews->new(
+      api_key => $API_KEY,
+      timeframe => {
+          start => {
+              date          => 'now',
+              amount_before => '2',
+              unit          => 'days'
+          },
+          end => 'now',
+      },
+      taxonomy => 'Movies',
+  );
+
+Also accepts an ArrayRef of values.
+
+concept - Specify a search query based on given concepts.
+
+  my $alchemy = Alchemy::DataNews->new(
+      api_key => $API_KEY,
+      timeframe => {
+          start => {
+              date          => 'now',
+              amount_before => '2',
+              unit          => 'days'
+          },
+          end => 'now',
+      },
+      concept => 'Automotive Industry',
+  );
+
+Also accepts an ArrayRef of arguments.
+
+entity - Classify a keyword as an entity of another. For example, search for "Apple" the "company":
+
+  my $alchemy = Alchemy::DataNews->new(
+      api_key => $API_KEY,
+      timeframe => {
+          start => {
+              date          => 'now',
+              amount_before => '2',
+              unit          => 'days'
+          },
+          end => 'now',
+      },
+      entity => { company => 'Apple' },
+  );
+
+
+Also accepts an ArrayRef as the nested hash value.
+
+relations - Specify a "target" and an "action" to search. An action can be a keyword (like a verb) to refine your searches.
+
+For example, see if Google bought anything of interest in the last 2 days:
+
+  my $alchemy = Alchemy::DataNews->new(
+      api_key => $API_KEY,
+      timeframe => {
+          start => {
+              date          => 'now',
+              amount_before => '2',
+              unit          => 'days'
+          },
+          end => 'now',
+      },
+      relations => {
+          target => 'Google',
+          action => 'purchased',
+      },
+
+  );
+
+Both nested hash keys will accept an ArrayRef as an argument as well.
+
+sentiment - Search based on sentiment analysis of the news article:
+
+  my $alchemy = Alchemy::DataNews->new(
+      api_key => $API_KEY,
+      timeframe => {
+          start => {
+              date          => 'now',
+              amount_before => '2',
+              unit          => 'days'
+          },
+          end => 'now',
+      },
+      sentiment => {
+          score => {
+             value    => '0.5',
+             operator => '>=',
+          },
+          type => 'positive',
+      },
+  );
+
+
+The score key corresponds to Watson's calculated sentiment score, and the opertator applies the given logic.
+
+Valid operators are: =>, <=, <, >, and =
+
+=head1 QUERY ATTRIBUTES
+
+When you specify an ArrayRef as a value, the default is to search by OR. You can specify AND like so:
+
+  my $alchemy = Alchemy::DataNews->new(
+      api_key => $API_KEY,
+      timeframe => {
+          start => {
+              date          => 'now',
+              amount_before => '2',
+              unit          => 'days'
+          },
+          end => 'now',
+      }
+      keywords => [
+          {
+              title => 'Net Neutrality'
+          },
+          {
+              text  => [
+                  'FCC', 'merger', 'Time Warner Cable', 'Google'
+              ]
+          },
+      ],
+      join => 'AND',
+  );
+
+This will then set the default search to AND for the rest of the instance.
+
+However, each nested level will override the default, so you can specify more complex custom queries like so:
+
+  my $alchemy = Alchemy::DataNews->new(
+      api_key => $API_KEY,
+      timeframe => {
+          start => {
+              date          => 'now',
+              amount_before => '2',
+              unit          => 'days'
+          },
+          end => 'now',
+      }
+      keywords => [
+          {
+              title => ['Net Neutrality', 'Congress']    # Default to 'OR'
+          },
+          {
+              text  => ['FCC', 'merger', 'Time Warner Cable', 'Google'],
+              join => 'AND'
+          },
+      ],
+  );
+
+=head1 INSTANCE METHODS
+
+search_news - formats and sends the REST request to Watson
+
+next - returns the next page of results. If there is a next page of results, the previous result will 
+contain key "next" with a token as the value that simply needs to be appended to the previous query. This
+module will cache the previous query and next token (if it exists) so you can call the next page of results like:
+
+  my $alchemy = Alchemy::DataNews->new(
+      api_key => $API_KEY,
+      timeframe => {
+          start => {
+              date          => 'now',
+              amount_before => '2',
+              unit          => 'days'
+          },
+          end => 'now',
+      }
+      keywords => [
+          {
+              title => ['Net Neutrality', 'Congress']    # Default to 'OR'
+          },
+          {
+              text  => ['FCC', 'merger', 'Time Warner Cable', 'Google'],
+              join => 'AND'
+          },
+      ],
+  );
+
+  my $next_results = $alchemy->next;
+
+If you want to iterate through all pages, you can use next with a while loop:
+
+  while (my $next_results = $alchemy->next) {
+      # Do the fun stuff here
+  }
+
+=head1 AUTHOR
+
+Connor Yates E<lt>connor.t.yates@gmail.comE<gt>
+
+=head1 COPYRIGHT
+
+Copyright 2016- Connor Yates
+
+=head1 LICENSE
+
+MIT - See LICENSE file for details
+
+=head1 SEE ALSO
+
+=cut

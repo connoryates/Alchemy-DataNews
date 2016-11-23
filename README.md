@@ -33,6 +33,15 @@ my $results = $alchemy->search_news({
 });
 ```
 
+# DESCRIPTION
+
+Alchemy::DataNews is a client for IBM Watson's Alchemy DataNews API. The API is a very powerful
+REST API capable of searching keywords, semantics, tied action words, and word relationships
+across given timeframes. For specific examples of what the API is capable of, please read:
+http://docs.alchemyapi.com/docs/
+
+This module will map Perl syntax into the REST parameters that Watson's DataNews API uses - similar to how ```DBIC``` works.
+
 # CREDENTIALS
 
 You will need the `username` and `password` credentials for each service. Service credentials are different from your Bluemix account username and password.
@@ -48,12 +57,6 @@ To get your service credentials, follow these steps:
  1. Copy your credentials:
      1. On the left side of the page, click **Service Credentials** to view your service credentials.
      1. Copy `username` and `password` from these service credentials.
-
-# DESCRIPTION
-
-Search Watson's news database with Perl style syntax.
-
-This module will map Perl syntax into the REST parameters that Watson's DataNews API uses - similar to how ```DBIC``` works.
 
 # CONSTRUCTOR
 
