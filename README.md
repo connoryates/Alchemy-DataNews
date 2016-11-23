@@ -53,7 +53,7 @@ To get your service credentials, follow these steps:
 
 Search Watson's news database with Perl style syntax.
 
-This module will map Perl syntax into the REST parameters that Watson's DataNews API uses, similar to how ```DBIC``` handles.
+This module will map Perl syntax into the REST parameters that Watson's DataNews API uses - similar to how ```DBIC``` works.
 
 # CONSTRUCTOR
 
@@ -61,16 +61,16 @@ This module gives you the option to specify your search paramters during constru
 
 ```perl
 my $alchemy = Alchemy::DataNews->new(
-  api_key   => $API_KEY,
-  keywords  => { title => 'Net Neutrality' },
-  timeframe => {
-      start => {
-           date          => 'now',
-           amount_before => '2',
-           unit          => 'hours'
-       },
-       end => 'now',
-  }
+    api_key   => $API_KEY,
+    keywords  => { title => 'Net Neutrality' },
+    timeframe => {
+        start => {
+            date          => 'now',
+            amount_before => '2',
+            unit          => 'hours'
+        },
+        end => 'now',
+    }
 );
 
 $alchemy->search_news;
@@ -78,19 +78,19 @@ $alchemy->search_news;
 # -- OR --
 
 my $alchemy = Alchemy::DataNews->new(
-  api_key   => $API_KEY,
+    api_key   => $API_KEY,
 );
 
 $alchemy->search_news({
-  keywords  => { title => 'Net Neutrality' },
-  timeframe => {
-      start => {
-           date          => 'now',
-           amount_before => '2',
-           unit          => 'hours'
-       },
-       end => 'now',
-  }
+    keywords  => { title => 'Net Neutrality' },
+    timeframe => {
+        start => {
+            date          => 'now',
+            amount_before => '2',
+            unit          => 'hours'
+        },
+        end => 'now',
+   }
 });
 
 ```
@@ -152,13 +152,20 @@ my $alchemy = Alchemy::DataNews->new(
         end => 'now',
     }
     keywords => [
-        { title => 'Net Neutrality' },
-        { text  => ['FCC', 'merger', 'Time Warner Cable', 'Google'] },
+        {
+            title => 'Net Neutrality'
+        },
+        {
+            text  => [
+                'FCC', 'merger', 'Time Warner Cable', 'Google'
+            ]
+        },
     ],
 );
 ```
 
 For the keywords query, the only available hash keys are ```title``` and ```text```.
+
 
 ```taxonomy``` - Search based on classifications of news articles:
 
@@ -271,7 +278,7 @@ Valid operators are: ```>=```, ```<=```, ```<```, ```>```, and ```=```
 
 # QUERY ATTRIBUTES
 
-When you specify an ArrayRef as a value, the default is to search by OR. You can specify AND like so:
+When you specify an ArrayRef as a value, the default is to search by ```OR```. You can specify ```AND``` like so:
 
 ```perl
 my $alchemy = Alchemy::DataNews->new(
@@ -285,8 +292,14 @@ my $alchemy = Alchemy::DataNews->new(
         end => 'now',
     }
     keywords => [
-        { title => 'Net Neutrality' },
-        { text  => ['FCC', 'merger', 'Time Warner Cable', 'Google'] },
+        {
+            title => 'Net Neutrality'
+        },
+        {
+            text  => [
+                'FCC', 'merger', 'Time Warner Cable', 'Google'
+            ]
+        },
     ],
     join => 'AND',
 );
@@ -309,7 +322,7 @@ my $alchemy = Alchemy::DataNews->new(
     }
     keywords => [
         {
-            title => 'Net Neutrality'
+            title => ['Net Neutrality', 'Congress']    # Default to 'OR'
         },
         {
             text  => ['FCC', 'merger', 'Time Warner Cable', 'Google'],
@@ -323,7 +336,42 @@ my $alchemy = Alchemy::DataNews->new(
 
 ```search_news``` - formats and sends the REST request to Watson
 
-```next``` - returns the next page of results
+```next``` - returns the next page of results. If there is a next page of results, the previous result will 
+contain key "next" with a token as the value that simply needs to be appended to the previous query. This
+module will cache the previous query and next token (if it exists) so you can call the next page of results like:
+
+```perl
+my $alchemy = Alchemy::DataNews->new(
+    api_key => $API_KEY,
+    timeframe => {
+        start => {
+            date          => 'now',
+            amount_before => '2',
+            unit          => 'days'
+        },
+        end => 'now',
+    }
+    keywords => [
+        {
+            title => ['Net Neutrality', 'Congress']    # Default to 'OR'
+        },
+        {
+            text  => ['FCC', 'merger', 'Time Warner Cable', 'Google'],
+            join => 'AND'
+        },
+    ],
+);
+
+my $next_results = $alchemy->next;
+```
+
+If you want to iterate through all pages, you can use ```next``` with a while loop:
+
+```perl
+while (my $next_results = $alchemy->next) {
+    # Do the fun stuff here
+}
+```
 
 # AUTHOR
 
