@@ -116,7 +116,7 @@ timeframe => {
 ```
 
 Will start the search beginning two days in the past from the current day and end on the current day. You don't have to specify an
-amount before of a unit of time though, you can specify specifid dates as well.
+amount before of a unit of time though, you can specify dates as well.
 
 ```keywords``` - indicates what keywords you want to match in your searches. Takes a HashRef, ArrayRef of HashRefs, or a string.
 
@@ -213,7 +213,7 @@ my $alchemy = Alchemy::DataNews->new(
         },
         end => 'now',
     },
-    entity => { company => 'Google' },
+    entity => { company => 'Apple' },
 );
 ```
 
