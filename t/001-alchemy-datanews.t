@@ -6,7 +6,7 @@ use Test::More;
 use_ok 'Alchemy::DataNews';
 
 my $data = Alchemy::DataNews->new(
-    api_key => $ENV{API_KEY},
+    api_key => $ENV{API_KEY} // 'TEST',
 );
 
 isa_ok($data, 'Alchemy::DataNews');
@@ -191,9 +191,9 @@ subtest 'Format taxonomy query' => sub {
         taxonomy => 'Movies',
     );
 
-    my $txn_query = $data->_format_taxonomy_query;
+    $txn_query = $data->_format_taxonomy_query;
 
-    my $expect = {
+    $expect = {
         'q.enriched.url.enrichedTitle.taxonomy.taxonomy_.label' => 'Movies'
     };
 
