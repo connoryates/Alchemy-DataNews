@@ -100,6 +100,52 @@ subtest 'Format keywords query' => sub {
 
     is_deeply($expect, $keyword_query, "Formatted keyword query successfully");
 
+
+    $data = Alchemy::DataNews->new(
+        api_key  => 'TEST',
+        keywords => [
+            {
+                title => ['Obama', 'Biden'],
+                join  => 'AND',
+            },
+            {
+                text => ['Trump', 'Pence'],
+            }
+        ],
+    );
+
+    $expect = {
+        'q.enriched.url.title' => 'A[Obama^Biden]',
+        'q.enriched.url.text'  => 'O[Trump^Pence]'
+    };
+
+    $keyword_query = $data->_format_keyword_query;
+
+
+    $data = Alchemy::DataNews->new(
+        api_key  => 'TEST',
+        keywords => [
+            {
+                title => ['Obama', 'Biden'],
+                join  => 'AND',
+            },
+            {
+                text => ['Trump', 'Pence'],
+                join => 'AND',
+            }
+        ],
+    );
+
+    $expect = {
+        'q.enriched.url.title' => 'A[Obama^Biden]',
+        'q.enriched.url.text'  => 'A[Trump^Pence]'
+    };
+
+    $keyword_query = $data->_format_keyword_query;
+
+
+    is_deeply($expect, $keyword_query, "Formatted keyword query successfully");
+
     $data = Alchemy::DataNews->new(
         api_key  => 'TEST',
         keywords => [
@@ -173,7 +219,7 @@ subtest 'Format keywords query' => sub {
 
 subtest 'Format taxonomy query' => sub {
     $data = Alchemy::DataNews->new(
-        api_key => 'TEST',
+        api_key  => 'TEST',
         taxonomy => ['Movies', 'Politics'],
     );
 
@@ -181,6 +227,21 @@ subtest 'Format taxonomy query' => sub {
 
     my $expect = {
         'q.enriched.url.enrichedTitle.taxonomy.taxonomy_.label' => 'O[Movies^Politics]'    
+    };
+
+    is_deeply($txn_query, $expect, "Formatted taxonomy query successfully");
+
+
+    $data = Alchemy::DataNews->new(
+        api_key  => 'TEST',
+        taxonomy => ['Movies', 'Politics'],
+        join     => 'AND',
+    );
+
+    $txn_query = $data->_format_taxonomy_query;
+
+    $expect = {
+        'q.enriched.url.enrichedTitle.taxonomy.taxonomy_.label' => 'A[Movies^Politics]'
     };
 
     is_deeply($txn_query, $expect, "Formatted taxonomy query successfully");
@@ -203,7 +264,7 @@ subtest 'Format taxonomy query' => sub {
 subtest 'Format entity query' => sub {
     $data = Alchemy::DataNews->new(
         api_key => 'TEST',
-        entity => { company => 'Apple' },
+        entity  => { company => 'Apple' },
     );
 
     my $entity_query = $data->_format_entity_query;
@@ -218,13 +279,29 @@ subtest 'Format entity query' => sub {
 
     $data = Alchemy::DataNews->new(
         api_key => 'TEST',
-        entity => { company => ['Apple', 'Microsoft'] },
+        entity  => { company => ['Apple', 'Microsoft'] },
     );
 
     $entity_query = $data->_format_entity_query;
 
     $expect = {
         'q.enriched.url.enrichedTitle.entities.entity.text' => 'O[Apple^Microsoft]',
+        'q.enriched.url.enrichedTitle.entities.entity.type' => 'company'
+    };
+
+    is_deeply($entity_query, $expect, "Formatted entity query successfully");
+
+
+    $data = Alchemy::DataNews->new(
+        api_key => 'TEST',
+        entity  => { company => ['Apple', 'Microsoft'] },
+        join    => 'AND',
+    );
+
+    $entity_query = $data->_format_entity_query;
+
+    $expect = {
+        'q.enriched.url.enrichedTitle.entities.entity.text' => 'A[Apple^Microsoft]',
         'q.enriched.url.enrichedTitle.entities.entity.type' => 'company'
     };
 
@@ -244,6 +321,47 @@ subtest 'Format relations query' => sub {
     my $expect = '|subject.entities.entity.type=Googleacton.verb.text=purchasedobject.entities.entity.type=Google|';
 
     is($rel_query, $expect, "Formatted relations query successfully");
+};
+
+subtest 'Format sentiment query' => sub {
+    $data = Alchemy::DataNews->new(
+        api_key => 'TEST',
+        sentiment => {
+            score => {
+                value    => '0.5',
+                operator => '>=',
+            },
+            type => 'positive',            
+        },
+    );
+
+    my $sent_query = $data->_format_sentiment_query;
+
+    my $expect = {
+        'q.enriched.url.enrichedTitle.docSentiment' => '|type=positive,score>=0.5|'
+    };
+
+    is_deeply($sent_query, $expect, "Formatted sentiment query succesfully");
+
+
+    $data = Alchemy::DataNews->new(
+        api_key => 'TEST',
+        sentiment => {
+            score => {
+                value    => '0.5',
+                operator => '>=',
+            },
+            type => ['positive', 'negative'],
+        },
+    );
+
+    $sent_query = $data->_format_sentiment_query;
+
+    $expect = {
+        'q.enriched.url.enrichedTitle.docSentiment' => '|type=O[positive^negative],score>=0.5|'
+    };
+
+    is_deeply($sent_query, $expect, "Formatted sentiment query succesfully");
 };
 
 done_testing();

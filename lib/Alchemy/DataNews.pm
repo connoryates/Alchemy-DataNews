@@ -10,6 +10,9 @@ our $VERISON = '0.01';
 
 use constant ALCHEMY_ENDPOINT => 'https://gateway-a.watsonplatform.net/calls/data/GetNews';
 
+our $LAST_QUERY = '';
+our $NEXT       = '';
+
 our %UNIT_MAP = (
     days    => 'd',
     seconds => 's',
@@ -40,6 +43,8 @@ sub new {
         _entity          => $data{entity}          || undef,
         _relations       => $data{relations}       || undef,
         _sentiment       => $data{sentiment}       || undef,
+        _exact_match     => $data{exact_math}      || undef,
+        _join            => $data{join}            || undef,
     }, $class;
 
     return $self;
@@ -60,22 +65,50 @@ sub search_news {
     $self->{_sentiment} = $info->{sentiment} if defined $info->{sentiment};
     $self->{_timeframe} = $info->{timeframe} if defined $info->{timeframe};
 
+    # Query attributes
+    $self->{_exact_match} = $info->{exact_match} if defined $info->{exact_match};
+    $self->{_join}        = $info->{join}        if defined $info->{join};
+
     my %query_form   = %{ $self->_format_date_query || +{} };
-    my $query_form   = $self->_query_form(\%query_form);
-    my $search_query = $self->_search_query($query_form);
+    my $formatted    = $self->_format_form(\%query_form);
+    my $search_query = $self->_search_news($formatted);
+
+    $LAST_QUERY = $search_query;
+
+    return $self->_fetch_query($search_query);
+}
+
+sub next {
+    my $self  = shift;
+    my $query = shift || $LAST_QUERY;
+    my $next  = shift || $NEXT;
+
+    my $uri = URI->new($query);
+       $uri->query_form( next => $next );
+
+    return $self->_fetch_query($uri->as_string);   
+}
+
+sub _fetch_query {
+    my ($self, $query) = @_;
 
     my $content;
     try {
-        my $resp = Furl->new->get($search_query);
+        my $resp = Furl->new->get($query);
         $content = decode_json( $resp->content );
     } catch {
         croak "Failed to get News Alert!\nReason : $_";
     };
 
+    # No next field if you want raw output!
+    if (defined $content and ref($content) and ref($content) eq 'HASH') {
+        $NEXT = $content->{result}->{next} || '';
+    }
+
     return $content;
 }
 
-sub _query_form {
+sub _format_queries {
     my ($self, $query_form) = @_;
 
     my @query_types = qw(
@@ -102,7 +135,7 @@ sub _query_form {
     return \%query_form; 
 }
 
-sub _search_query {
+sub _search_news {
     my ($self, $params) = @_;
 
     croak "Missing required arg : params" unless defined $params;
@@ -167,6 +200,15 @@ sub _format_keyword_query {
     if (ref($keywords) and ref($keywords) eq 'ARRAY') {
         foreach my $keyword (@$keywords) {
             if (ref($keyword) and ref($keyword) eq 'HASH') {
+
+                my $prefix;
+                if (defined $keyword->{join}) {
+                    # Allow custom joins
+                    $prefix = $self->__get_prefix($keyword->{join});
+                }
+
+                $prefix ||= $self->__get_prefix;
+
                 while (my ($type, $value) = each %$keyword) {
                     my $query_string;
 
@@ -175,11 +217,11 @@ sub _format_keyword_query {
 
                         if ($type eq 'title') {
                             $query_string = 'q.enriched.url.title';
-                            $params->{$query_string} = 'O[' . $search_string . ']';
+                            $params->{$query_string} = $prefix . '[' . $search_string . ']';
                         }
                         elsif ($type eq 'text') {
                             $query_string = 'q.enriched.url.text';
-                            $params->{$query_string} = 'O[' . $search_string . ']';
+                            $params->{$query_string} = $prefix . '[' . $search_string . ']';
                         }
                     }
                     else {
@@ -197,11 +239,18 @@ sub _format_keyword_query {
             else {
                 my $query_string  = 'q.enriched.url.text';
                 my $search_string = join '^', @$keywords;
-                $params->{$query_string} = 'O[' . $search_string . ']';
+
+                my $prefix = $self->__get_prefix;
+
+                $params->{$query_string} = $prefix . '[' . $search_string . ']';
             }
         }
     }
     elsif (ref($keywords) and ref($keywords) eq 'HASH') {
+        my $prefix;
+        if (defined $keywords->{join}) {
+            $prefix = $self->__get_prefix($keywords->{join});
+        }
         while (my ($type, $value) = each %$keywords) {
             my $query_string;
 
@@ -209,11 +258,11 @@ sub _format_keyword_query {
                 $search_string = join '^', @$value;
                 if ($type eq 'title') {
                     $query_string = 'q.enriched.url.title';
-                    $params->{$query_string} = 'O[' . $search_string . ']';
+                    $params->{$query_string} = $prefix . '[' . $search_string . ']';
                 }
                 elsif ($type eq 'text') {
                     $query_string = 'q.enriched.url.text';
-                    $params->{$query_string} = 'O[' . $search_string . ']';
+                    $params->{$query_string} = $prefix . '[' . $search_string . ']';
                 }
             }
             else {
@@ -241,7 +290,10 @@ sub _format_taxonomy_query {
 
     if (ref($taxonomy) and ref($taxonomy) eq 'ARRAY') {
         my $search_string = join '^', @{ $taxonomy };
-        $params->{$query_string} = 'O[' . $search_string . ']';
+
+        my $prefix = $self->__get_prefix;
+
+        $params->{$query_string} = $prefix . '[' . $search_string . ']';
     }
     else {
         $params->{$query_string} = $taxonomy 
@@ -258,12 +310,14 @@ sub _format_concepts_query {
     my $params       = {};
     my $query_string = 'q.enriched.url.concepts.concept.text';
 
+    my $prefix = $self->__get_prefix;
+
     if (ref($concept) and ref($concept) eq 'ARRAY') {
         my $search_string = join '^', @{ $concept };
-        $params->{$query_string} = 'O[' . $search_string . ']';
+        $params->{$query_string} = $prefix . '[' . $search_string . ']';
     }
     else {
-        $params->{$query_string} = 'O[' . $concept . ']';
+        $params->{$query_string} = $prefix . '[' . $concept . ']';
     }
 
     return $params;
@@ -282,8 +336,10 @@ sub _format_entity_query {
         if (ref($value) and ref($value) eq 'ARRAY') {
             my $search_string = join '^', @{ $value };
 
+            my $prefix = $self->__get_prefix;
+
             $params->{$type_query}   = $type;
-            $params->{$entity_query} = 'O[' . $search_string . ']';
+            $params->{$entity_query} = $prefix . '[' . $search_string . ']';
         }
         else {
             $params->{$type_query}   = $type;
@@ -313,8 +369,9 @@ sub _format_relations_query {
             elsif ($key eq 'action') {
                 if (ref($value) and ref($value) eq 'ARRAY') {
                     my $search_string = join '^', @$value;
- 
-                    $action = 'acton.verb.text=' . 'O[' . $search_string . ']';
+                    my $prefix = $self->__get_prefix;
+
+                    $action = 'acton.verb.text=' . $prefix . '[' . $search_string . ']';
                 }
                 else {
                     $action = 'acton.verb.text=' . $value
@@ -346,17 +403,26 @@ sub _format_sentiment_query {
 
     my $query_string = 'q.enriched.url.enrichedTitle.docSentiment';
 
+    # |type=positive,score=>0.5|
+
     if (ref($sentiment) and ref($sentiment) eq 'HASH') {
         my $sent_string = '|type=';
  
         if (my $type = $sentiment->{type}) {
             if (ref($type) and ref($type) eq 'ARRAY') {
-                $sent_string .= 'O[' . join '^', @$value . '],';
+                my $prefix = $self->__get_prefix;
+                my $search_string = join '^', @$type;
+                $sent_string .= $prefix . '[' . $search_string . '],';
             }
             else {
                 $sent_string .= $type . ',';
             }
         }
+        else {
+            cluck "No type key detected in sentiment query, cannot build";
+            return undef;
+        }
+
         if (my $score = $sentiment->{score}) {
             if (ref $score and ref($score) eq 'HASH') {
                 my $value    = $score->{value};
@@ -367,7 +433,7 @@ sub _format_sentiment_query {
                     return undef;
                 }
 
-                $sent_string .= $value . $operator . '|';
+                $sent_string .= 'score' . $operator . $value . '|';
             }
             else {
                 cluck "Unsupported data structure in sentiment value, cannot build sentiment query";
@@ -375,13 +441,15 @@ sub _format_sentiment_query {
             }
         }
         else {
-            cluck "Unknown key in sentiment query";
+            cluck "No score key detected in sentiment query, cannot build";
+            return undef;
         }
 
         $params->{$query_string} = $sent_string;
     }
     else {
         cluck "Unsupported data structure in sentiment value, cannot build sentiment query";
+        return undef;
     }
 
     return $params;
@@ -411,6 +479,23 @@ sub _format_return_fields {
     }
     
     return 'enriched.url.url,enriched.url.title';
+}
+
+sub __get_prefix {
+    my $self = shift;
+    my $join = shift or undef;
+
+    $join ||= defined $self->{_join} ? $self->{_join} : 'OR';
+
+    unless ($join =~ /(?:^\bOR\b$|^\bAND\b$)/) {
+        cluck "Unsupported join type, defaulting to OR";
+        return 'O';
+    }
+
+    my ($prefix) = split '', $join;
+    $prefix = uc($prefix);
+
+    return $prefix;
 }
 
 1;
