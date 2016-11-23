@@ -4,10 +4,11 @@ use warnings;
 use Test::More;
 
 use_ok 'Alchemy::DataNews';
+use_ok 'Data::Dumper';
 
 my $data = Alchemy::DataNews->new(
-    api_key => $ENV{API_KEY} // 'TEST',
-);
+    api_key => $ENV{API_KEY} // 'TEST',    # Doesn't run any live queries unless $ENV{AUTHOR_TESTS} is set
+);                                         # so suppress the API key warning by passing 'TEST'
 
 isa_ok($data, 'Alchemy::DataNews');
 
@@ -17,8 +18,9 @@ subtest 'Checking methods' => sub {
     can_ok($data, @methods);
 };
 
-subtest 'Testing search_news' => sub {
-    plan skip_all => 'Forced';
+subtest 'Test search_news' => sub {
+    plan skip_all => 'Skipping author tests' unless $ENV{AUTHOR_TESTS};
+
     my $result = $data->search_news({
         sentiment => {
             score => {
@@ -34,15 +36,15 @@ subtest 'Testing search_news' => sub {
 #        entity => { company => 'Apple' },
 #        concept => ['Automotive Industry', 'Politics'],
 #        taxonomy => ['Movies', 'Politics'],
-        keywords => 'Obama',
-#        keywords => [
-#            {
-#                title => ['Obama', 'Biden'],
-#            },
-#            {
-#                text => 'Trump'
-#            }
-#        ],
+#        keywords => 'Obama',
+        keywords => [
+            {
+                title => ['Obama', 'Biden'],
+            },
+            {
+                text => 'Trump'
+            }
+        ],
         timeframe => {
            start => {
                 date          => 'now',
@@ -53,8 +55,40 @@ subtest 'Testing search_news' => sub {
         }
     });
 
-    use Data::Dumper;
-    print "result => " . Dumper $result;
+    is(defined $result, 1, "Got a result back from request");
+
+    print Dumper $result;
+};
+
+subtest 'Test next' => sub {
+    plan skip_all => 'Skipping author tests' unless $ENV{AUTHOR_TESTS};
+
+    if (not defined $data->{_next}) {
+        $data->search_news({
+            keywords => [
+                {
+                    title => ['Obama', 'Biden'],
+                },
+                {
+                    text => 'Trump'
+                }
+            ],
+            timeframe => {
+               start => {
+                    date          => 'now',
+                    amount_before => '2',
+                    unit          => 'days'
+                },
+                end => 'now',
+            }
+        });
+    }
+
+    my $next_result = $data->next;
+
+    is(defined $next_result, 1, "Got a result back from request");
+
+    print Dumper $next_result;
 };
 
 subtest 'Format date query' => sub {

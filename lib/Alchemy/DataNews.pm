@@ -10,9 +10,6 @@ our $VERISON = '0.01';
 
 use constant ALCHEMY_ENDPOINT => 'https://gateway-a.watsonplatform.net/calls/data/GetNews';
 
-our $LAST_QUERY = '';
-our $NEXT       = '';
-
 our %UNIT_MAP = (
     days    => 'd',
     seconds => 's',
@@ -30,7 +27,6 @@ sub new {
         _timeframe       => $data{timeframe}       || undef,
         _debug           => $data{debug}           || 0,
         _max_results     => $data{max_results}     || 5,
-        _next_page       => $data{next_page}       || undef,
         _rank            => $data{rank}            || undef,
         _time_slice      => $data{time_slice}      || undef,
         _dedup           => $data{dedup}           || undef,
@@ -45,6 +41,8 @@ sub new {
         _sentiment       => $data{sentiment}       || undef,
         _exact_match     => $data{exact_math}      || undef,
         _join            => $data{join}            || undef,
+        _next            => $data{next}            || undef,   # Allow user to override next and last query if necessary
+        _last_query      => $data{last_query}      || undef,
     }, $class;
 
     return $self;
@@ -73,15 +71,15 @@ sub search_news {
     my $formatted    = $self->_format_queries($query_form);
     my $search_query = $self->_search_news($formatted);
 
-    $LAST_QUERY = $search_query;
+    $self->{_last_query} = $search_query;
 
     return $self->_fetch_query($search_query);
 }
 
 sub next {
     my $self  = shift;
-    my $query = shift || $LAST_QUERY;
-    my $next  = shift || $NEXT;
+    my $query = shift || $self->{_last_query};
+    my $next  = shift || $self->{_next};
 
     croak "Cannot call method next without a defined next value"
       unless defined $next;
@@ -107,7 +105,7 @@ sub _fetch_query {
 
     # No next field if you want raw output!
     if (defined $content and ref($content) and ref($content) eq 'HASH') {
-        $NEXT = $content->{result}->{next} || '';
+        $self->{_next} = $content->{result}->{next} || '';
     }
 
     return $content;
