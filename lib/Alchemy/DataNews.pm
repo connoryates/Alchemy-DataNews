@@ -58,41 +58,11 @@ sub search_news {
     $self->{_entity}    = $info->{entity}    if defined $info->{entity};
     $self->{_relations} = $info->{relations} if defined $info->{relations};
     $self->{_sentiment} = $info->{sentiment} if defined $info->{sentiment};
+    $self->{_timeframe} = $info->{timeframe} if defined $info->{timeframe};
 
-    my $timeframe  = $info->{timeframe};
-    my %query_form = %{ $self->_format_date_query($timeframe) || +{} };
-
-    %query_form = (
-        %query_form,
-        %{ $self->_format_keyword_query }
-    ) if $self->{_keywords};
-
-    %query_form = (
-        %query_form,
-        %{ $self->_format_taxonomy_query }
-    ) if $self->{_taxonomy};
-
-    %query_form = (
-        %query_form,
-        %{ $self->_format_concepts_query }
-    ) if $self->{_concept};
-
-    %query_form = (
-        %query_form,
-        %{ $self->_format_entity_query }
-    ) if $self->{_entity};
-
-    %query_form = (
-        %query_form,
-        %{ $self->_format_relations_query }
-    ) if $self->{_relations};
-
-    %query_form = (
-        %query_form,
-        %{ $self->_format_sentiment_query }
-    ) if $self->{_sentiment};
-
-    my $search_query = $self->_search_query(\%query_form);
+    my %query_form   = %{ $self->_format_date_query || +{} };
+    my $query_form   = $self->_query_form(\%query_form);
+    my $search_query = $self->_search_query($query_form);
 
     my $content;
     try {
@@ -103,6 +73,33 @@ sub search_news {
     };
 
     return $content;
+}
+
+sub _query_form {
+    my ($self, $query_form) = @_;
+
+    my @query_types = qw(
+        _keyword
+        _taxonomy
+        _concepts
+        _entity
+        _relations
+        _sentiment
+    );
+
+    my %query_form = %$query_form;
+
+    foreach my $query_type (@query_types) {
+        next unless defined $self->{$query_type};
+
+        my $method = '_format' . $query_type . '_query';
+
+        if ($self->can($method)) {
+            %query_form = ( %query_form, %{ $self->$method } );
+        }
+    }
+
+    return \%query_form; 
 }
 
 sub _search_query {
@@ -131,7 +128,9 @@ sub _search_query {
 }
 
 sub _format_date_query {
-    my ($self, $timeframe) = @_;
+    my $self = shift;
+
+    my $timeframe = $self->{_timeframe};
 
     croak "Missing required param : timeframe"  unless defined $timeframe;
     croak "Arg timeframe must be a HashRef" unless ref($timeframe) eq 'HASH';
@@ -163,31 +162,42 @@ sub _format_keyword_query {
 
     croak "Missing keywords, cannot format query" unless defined $keywords;
 
-    croak "keywords must be an ArrayRef" unless ref($keywords)
-      and ref($keywords) eq 'ARRAY';
-
     my $params = {};
 
     if (ref($keywords) and ref($keywords) eq 'ARRAY') {
         foreach my $keyword (@$keywords) {
-            while (my ($type, $value) = each %$keyword) {
-                my $query_string;
+            if (ref($keyword) and ref($keyword) eq 'HASH') {
+                while (my ($type, $value) = each %$keyword) {
+                    my $query_string;
 
-                if (ref($value) eq 'ARRAY') {
-                    $search_string = join '^', @$value;
-                }
-                else {
-                    $search_string = $v;
-                }
+                    if (ref($value) eq 'ARRAY') {
+                        my $search_string = join '^', @$value;
 
-                if ($type eq 'title') {
-                    $query_string = 'q.enriched.url.title';
-                    $params->{$query_string} = 'O[' . $search_string . ']';
+                        if ($type eq 'title') {
+                            $query_string = 'q.enriched.url.title';
+                            $params->{$query_string} = 'O[' . $search_string . ']';
+                        }
+                        elsif ($type eq 'text') {
+                            $query_string = 'q.enriched.url.text';
+                            $params->{$query_string} = 'O[' . $search_string . ']';
+                        }
+                    }
+                    else {
+                        if ($type eq 'title') {
+                            $query_string = 'q.enriched.url.title';
+                            $params->{$query_string} = $value;
+                        }
+                        elsif ($type eq 'text') {
+                            $query_string = 'q.enriched.url.text';
+                            $params->{$query_string} = $value;
+                        }
+                    }
                 }
-                elsif ($type eq 'text') {
-                    $query_string = 'q.enriched.url.text';
-                    $params->{$query_string} = 'O[' . $search_string . ']';
-                }
+            }
+            else {
+                my $query_string  = 'q.enriched.url.text';
+                my $search_string = join '^', @$keywords;
+                $params->{$query_string} = 'O[' . $search_string . ']';
             }
         }
     }
@@ -197,24 +207,25 @@ sub _format_keyword_query {
 
             if (ref($value) eq 'ARRAY') {
                 $search_string = join '^', @$value;
+                if ($type eq 'title') {
+                    $query_string = 'q.enriched.url.title';
+                    $params->{$query_string} = 'O[' . $search_string . ']';
+                }
+                elsif ($type eq 'text') {
+                    $query_string = 'q.enriched.url.text';
+                    $params->{$query_string} = 'O[' . $search_string . ']';
+                }
             }
             else {
-                $search_string = $v;
+                $query_string = 'q.enriched.url.text';
+                $params->{$query_string} = $value;
             }
 
-            if ($type eq 'title') {
-                $query_string = 'q.enriched.url.title';
-                $params->{$query_string} = 'O[' . $search_string . ']';
-            }
-            elsif ($type eq 'text') {
-                $query_string = 'q.enriched.url.text';
-                $params->{$query_string} = 'O[' . $search_string . ']';
-            }
         }
     }
     else {
         $query_string = 'q.enriched.url.text';
-        $params->{$query_string} = 'O[' . $search_string . ']';
+        $params->{$query_string} = $keywords;
     }
 
     return $params;
@@ -233,7 +244,7 @@ sub _format_taxonomy_query {
         $params->{$query_string} = 'O[' . $search_string . ']';
     }
     else {
-        $params->{$query_string} = 'O[' . $taxonomy . ']';
+        $params->{$query_string} = $taxonomy 
     }
 
     return $params;
@@ -272,7 +283,7 @@ sub _format_entity_query {
             my $search_string = join '^', @{ $value };
 
             $params->{$type_query}   = $type;
-            $params->{$entity_query} = $search_string;
+            $params->{$entity_query} = 'O[' . $search_string . ']';
         }
         else {
             $params->{$type_query}   = $type;
@@ -402,5 +413,4 @@ sub _format_return_fields {
     return 'enriched.url.url,enriched.url.title';
 }
 
-1
-;
+1;
