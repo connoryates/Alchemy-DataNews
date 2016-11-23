@@ -17,15 +17,16 @@ subtest 'Checking methods' => sub {
     can_ok($data, @methods);
 };
 
-#subtest 'Testing search_news' => sub {
-#    my $search_url = $data->search_news({
-#        sentiment => {
-#            score => {
-#                value    => '0.5',
-#                operator => '>=',
-#            },
-#            type => 'positive',
-#        },
+subtest 'Testing search_news' => sub {
+    plan skip_all => 'Forced';
+    my $result = $data->search_news({
+        sentiment => {
+            score => {
+                value    => '0.5',
+                operator => '=>',
+            },
+            type => 'positive',
+        },
 #        relations => {
 #            target => 'Google',
 #            action => 'purchased',
@@ -33,6 +34,7 @@ subtest 'Checking methods' => sub {
 #        entity => { company => 'Apple' },
 #        concept => ['Automotive Industry', 'Politics'],
 #        taxonomy => ['Movies', 'Politics'],
+        keywords => 'Obama',
 #        keywords => [
 #            {
 #                title => ['Obama', 'Biden'],
@@ -41,19 +43,19 @@ subtest 'Checking methods' => sub {
 #                text => 'Trump'
 #            }
 #        ],
-#        timeframe => {
-#           start => {
-#                date          => 'now',
-#                amount_before => '2',
-#                unit          => 'days'
-#            },
-#            end => 'now',
-#        }
-#    });
+        timeframe => {
+           start => {
+                date          => 'now',
+                amount_before => '2',
+                unit          => 'days'
+            },
+            end => 'now',
+        }
+    });
 
-#    use Data::Dumper;
-#    print "search_url => " . Dumper $search_url;
-#};
+    use Data::Dumper;
+    print "result => " . Dumper $result;
+};
 
 subtest 'Format date query' => sub {
     $data = Alchemy::DataNews->new(
@@ -96,9 +98,9 @@ subtest 'Format keywords query' => sub {
         'q.enriched.url.text'  => 'O[Trump^Pence]'
     };
 
-    my $keyword_query = $data->_format_keyword_query;
+    my $keywords_query = $data->_format_keywords_query;
 
-    is_deeply($expect, $keyword_query, "Formatted keyword query successfully");
+    is_deeply($expect, $keywords_query, "Formatted keywords query successfully");
 
 
     $data = Alchemy::DataNews->new(
@@ -119,7 +121,7 @@ subtest 'Format keywords query' => sub {
         'q.enriched.url.text'  => 'O[Trump^Pence]'
     };
 
-    $keyword_query = $data->_format_keyword_query;
+    $keywords_query = $data->_format_keywords_query;
 
 
     $data = Alchemy::DataNews->new(
@@ -141,10 +143,10 @@ subtest 'Format keywords query' => sub {
         'q.enriched.url.text'  => 'A[Trump^Pence]'
     };
 
-    $keyword_query = $data->_format_keyword_query;
+    $keywords_query = $data->_format_keywords_query;
 
+    is_deeply($expect, $keywords_query, "Formatted keywords query successfully");
 
-    is_deeply($expect, $keyword_query, "Formatted keyword query successfully");
 
     $data = Alchemy::DataNews->new(
         api_key  => 'TEST',
@@ -158,14 +160,14 @@ subtest 'Format keywords query' => sub {
         ],
     );
 
-    $keyword_query = $data->_format_keyword_query;
+    $keywords_query = $data->_format_keywords_query;
 
     $expect = {
         'q.enriched.url.title' => 'O[Obama^Biden]',
         'q.enriched.url.text'  => 'Trump'
     };
 
-    is_deeply($keyword_query, $expect, "Formatted keyword query successfully");
+    is_deeply($keywords_query, $expect, "Formatted keywords query successfully");
 
     $data = Alchemy::DataNews->new(
         api_key  => 'TEST',
@@ -184,9 +186,9 @@ subtest 'Format keywords query' => sub {
         'q.enriched.url.text'  => 'Trump'
     };
 
-    $keyword_query = $data->_format_keyword_query;
+    $keywords_query = $data->_format_keywords_query;
 
-    is_deeply($expect, $keyword_query, "Formatted keyword query successfully");
+    is_deeply($expect, $keywords_query, "Formatted keywords query successfully");
 
 
     $data = Alchemy::DataNews->new(
@@ -198,9 +200,9 @@ subtest 'Format keywords query' => sub {
         'q.enriched.url.text'  => 'O[Obama^Trump]'
     };
 
-    $keyword_query = $data->_format_keyword_query;
+    $keywords_query = $data->_format_keywords_query;
 
-    is_deeply($expect, $keyword_query, "Formatted keyword query successfully");
+    is_deeply($expect, $keywords_query, "Formatted keywords query successfully");
 
 
     $data = Alchemy::DataNews->new(
@@ -212,9 +214,9 @@ subtest 'Format keywords query' => sub {
         'q.enriched.url.text'  => 'Obama'
     };
 
-    $keyword_query = $data->_format_keyword_query;
+    $keywords_query = $data->_format_keywords_query;
 
-    is_deeply($expect, $keyword_query, "Formatted keyword query successfully");
+    is_deeply($expect, $keywords_query, "Formatted keywords query successfully");
 };
 
 subtest 'Format taxonomy query' => sub {
@@ -324,12 +326,13 @@ subtest 'Format relations query' => sub {
 };
 
 subtest 'Format sentiment query' => sub {
+    # Testing one value for type and =>
     $data = Alchemy::DataNews->new(
         api_key => 'TEST',
         sentiment => {
             score => {
                 value    => '0.5',
-                operator => '>=',
+                operator => '=>',
             },
             type => 'positive',            
         },
@@ -338,18 +341,19 @@ subtest 'Format sentiment query' => sub {
     my $sent_query = $data->_format_sentiment_query;
 
     my $expect = {
-        'q.enriched.url.enrichedTitle.docSentiment' => '|type=positive,score>=0.5|'
+        'q.enriched.url.enrichedTitle.docSentiment' => '|type=positive,score=>0.5|'
     };
 
     is_deeply($sent_query, $expect, "Formatted sentiment query succesfully");
 
 
+    # Testing 2 values for type and =>
     $data = Alchemy::DataNews->new(
         api_key => 'TEST',
         sentiment => {
             score => {
                 value    => '0.5',
-                operator => '>=',
+                operator => '=>',
             },
             type => ['positive', 'negative'],
         },
@@ -358,10 +362,415 @@ subtest 'Format sentiment query' => sub {
     $sent_query = $data->_format_sentiment_query;
 
     $expect = {
-        'q.enriched.url.enrichedTitle.docSentiment' => '|type=O[positive^negative],score>=0.5|'
+        'q.enriched.url.enrichedTitle.docSentiment' => '|type=O[positive^negative],score=>0.5|'
     };
 
     is_deeply($sent_query, $expect, "Formatted sentiment query succesfully");
+
+
+    # Testing one value for type and <=
+    $data = Alchemy::DataNews->new(
+        api_key => 'TEST',
+        sentiment => {
+            score => {
+                value    => '0.5',
+                operator => '<=',
+            },
+            type => 'negative',
+        },
+    );
+
+    $sent_query = $data->_format_sentiment_query;
+
+    $expect = {
+        'q.enriched.url.enrichedTitle.docSentiment' => '|type=negative,score<=0.5|'
+    };
+
+    is_deeply($sent_query, $expect, "Formatted sentiment query succesfully");
+
+
+    # Testing two values for type and <=
+    $data = Alchemy::DataNews->new(
+        api_key => 'TEST',
+        sentiment => {
+            score => {
+                value    => '0.5',
+                operator => '<=',
+            },
+            type => ['negative', 'positive']
+        },
+    );
+
+    $sent_query = $data->_format_sentiment_query;
+
+    $expect = {
+        'q.enriched.url.enrichedTitle.docSentiment' => '|type=O[negative^positive],score<=0.5|'
+    };
+
+    is_deeply($sent_query, $expect, "Formatted sentiment query succesfully");
+
+
+    # Testing one value for type and <
+    $data = Alchemy::DataNews->new(
+        api_key => 'TEST',
+        sentiment => {
+            score => {
+                value    => '0.5',
+                operator => '<',
+            },
+            type => 'negative',
+        },
+    );
+
+    $sent_query = $data->_format_sentiment_query;
+
+    $expect = {
+        'q.enriched.url.enrichedTitle.docSentiment' => '|type=negative,score<0.5|'
+    };
+
+    is_deeply($sent_query, $expect, "Formatted sentiment query succesfully");
+
+
+    # Testing two values for type and <
+    $data = Alchemy::DataNews->new(
+        api_key => 'TEST',
+        sentiment => {
+            score => {
+                value    => '0.5',
+                operator => '<',
+            },
+            type => ['negative', 'positive'],
+        },
+    );
+
+    $sent_query = $data->_format_sentiment_query;
+
+    $expect = {
+        'q.enriched.url.enrichedTitle.docSentiment' => '|type=O[negative^positive],score<0.5|'
+    };
+
+    is_deeply($sent_query, $expect, "Formatted sentiment query succesfully");
+
+
+    # Testing one value for type and >
+    $data = Alchemy::DataNews->new(
+        api_key => 'TEST',
+        sentiment => {
+            score => {
+                value    => '0.5',
+                operator => '>',
+            },
+            type => 'negative',
+        },
+    );
+
+    $sent_query = $data->_format_sentiment_query;
+
+    $expect = {
+        'q.enriched.url.enrichedTitle.docSentiment' => '|type=negative,score>0.5|'
+    };
+
+    is_deeply($sent_query, $expect, "Formatted sentiment query succesfully");
+
+
+    # Testing two values for type and <
+    $data = Alchemy::DataNews->new(
+        api_key => 'TEST',
+        sentiment => {
+            score => {
+                value    => '0.5',
+                operator => '>',
+            },
+            type => ['negative', 'positive'],
+        },
+    );
+
+    $sent_query = $data->_format_sentiment_query;
+
+    $expect = {
+        'q.enriched.url.enrichedTitle.docSentiment' => '|type=O[negative^positive],score>0.5|'
+    };
+
+    is_deeply($sent_query, $expect, "Formatted sentiment query succesfully");
+
+
+    # Testing one value for type and >
+    $data = Alchemy::DataNews->new(
+        api_key => 'TEST',
+        sentiment => {
+            score => {
+                value    => '0.5',
+                operator => '=',
+            },
+            type => 'negative',
+        },
+    );
+
+    $sent_query = $data->_format_sentiment_query;
+
+    $expect = {
+        'q.enriched.url.enrichedTitle.docSentiment' => '|type=negative,score=0.5|'
+    };
+
+    is_deeply($sent_query, $expect, "Formatted sentiment query succesfully");
+
+
+    # Testing two values for type and <
+    $data = Alchemy::DataNews->new(
+        api_key => 'TEST',
+        sentiment => {
+            score => {
+                value    => '0.5',
+                operator => '=',
+            },
+            type => ['negative', 'positive'],
+        },
+    );
+
+    $sent_query = $data->_format_sentiment_query;
+
+    $expect = {
+        'q.enriched.url.enrichedTitle.docSentiment' => '|type=O[negative^positive],score=0.5|'
+    };
+
+    is_deeply($sent_query, $expect, "Formatted sentiment query succesfully");
+};
+
+subtest 'Complex queries' => sub {
+    $data = Alchemy::DataNews->new(
+        api_key => 'TEST',
+        sentiment => {
+            score => {
+                value    => '0.5',
+                operator => '=',
+            },
+            type => ['negative', 'positive'],
+        },
+        keywords => 'Obama',
+    );
+
+    my $queries = $data->_format_queries({});
+
+    my $expect = {
+        'q.enriched.url.text'                       => 'Obama',
+        'q.enriched.url.enrichedTitle.docSentiment' => '|type=O[negative^positive],score=0.5|'
+    };
+
+    is_deeply($queries, $expect, "Formatted keywords and sentiment correctly"); 
+
+
+    $data = Alchemy::DataNews->new(
+        api_key => 'TEST',
+        sentiment => {
+            score => {
+                value    => '0.5',
+                operator => '=',
+            },
+            type => ['negative', 'positive'],
+        },
+        keywords => [
+            {
+                text => 'Obama',
+            },
+            {
+                title => 'Trump',
+            },
+        ],
+    );
+
+    $queries = $data->_format_queries({});
+
+    $expect = {
+        'q.enriched.url.title' => 'Trump',
+        'q.enriched.url.text'  => 'Obama',
+        'q.enriched.url.enrichedTitle.docSentiment' => '|type=O[negative^positive],score=0.5|'
+    };
+
+    is_deeply($queries, $expect, "Formatted sentiment and keywords ArrayRef successfully");
+
+
+    $data = Alchemy::DataNews->new(
+        api_key => 'TEST',
+        sentiment => {
+            score => {
+                value    => '0.5',
+                operator => '=',
+            },
+            type => ['negative', 'positive'],
+        },
+        keywords => [
+            {
+                text => ['Obama', 'Biden'],
+            },
+            {
+                title => 'Trump',
+            },
+        ],
+    );
+
+    $queries = $data->_format_queries({});
+
+    $expect = {
+        'q.enriched.url.title' => 'Trump',
+        'q.enriched.url.text'  => 'O[Obama^Biden]',
+        'q.enriched.url.enrichedTitle.docSentiment' => '|type=O[negative^positive],score=0.5|'
+    };
+
+    is_deeply($queries, $expect, "Formatted sentiment and keywords ArrayRef with nested text ArrayRef");
+
+
+    $data = Alchemy::DataNews->new(
+        api_key => 'TEST',
+        sentiment => {
+            score => {
+                value    => '0.5',
+                operator => '=',
+            },
+            type => ['negative', 'positive'],
+        },
+        keywords => [
+            {
+                text => 'Obama',
+            },
+            {
+                title => ['Trump', 'Pence'],
+            },
+        ],
+    );
+
+    $queries = $data->_format_queries({});
+
+    $expect = {
+        'q.enriched.url.title' => 'O[Trump^Pence]',
+        'q.enriched.url.text' => 'Obama',
+        'q.enriched.url.enrichedTitle.docSentiment' => '|type=O[negative^positive],score=0.5|'
+    };
+
+    is_deeply($queries, $expect, "Formatted sentiment and keywords ArrayRef with nested title ArrayRef");
+
+
+    $data = Alchemy::DataNews->new(
+        api_key => 'TEST',
+        sentiment => {
+            score => {
+                value    => '0.5',
+                operator => '=',
+            },
+            type => ['negative', 'positive'],
+        },
+        keywords => [
+            {
+                text => ['Obama', 'Biden']
+            },
+            {
+                title => ['Trump', 'Pence'],
+            },
+        ],
+    );
+
+    $queries = $data->_format_queries({});
+
+    $expect = {
+        'q.enriched.url.title' => 'O[Trump^Pence]',
+        'q.enriched.url.text'  => 'O[Obama^Biden]',
+        'q.enriched.url.enrichedTitle.docSentiment' => '|type=O[negative^positive],score=0.5|'
+    };
+
+    is_deeply($queries, $expect, "Formatted sentiment and keywords ArrayRef with nested title and text ArrayRef");
+
+
+    $data = Alchemy::DataNews->new(
+        api_key => 'TEST',
+        sentiment => {
+            score => {
+                value    => '0.5',
+                operator => '=',
+            },
+            type => ['negative', 'positive'],
+        },
+        keywords => [
+            {
+                text => ['Obama', 'Biden'],
+                join => 'AND',
+            },
+            {
+                title => ['Trump', 'Pence'],
+            },
+        ],
+    );
+
+    $queries = $data->_format_queries({});
+
+    $expect = {
+        'q.enriched.url.title' => 'O[Trump^Pence]',
+        'q.enriched.url.text'  => 'A[Obama^Biden]',
+        'q.enriched.url.enrichedTitle.docSentiment' => '|type=O[negative^positive],score=0.5|'
+    };
+
+    is_deeply($queries, $expect, "Formatted sentiment and keywords ArrayRef with nested title and text ArrayRef with AND");
+
+
+    $data = Alchemy::DataNews->new(
+        api_key => 'TEST',
+        sentiment => {
+            score => {
+                value    => '0.5',
+                operator => '=',
+            },
+            type => ['negative', 'positive'],
+        },
+        keywords => [
+            {
+                text => ['Obama', 'Biden']
+            },
+            {
+                title => ['Trump', 'Pence'],
+                join  => 'AND',
+            },
+        ],
+    );
+
+    $queries = $data->_format_queries({});
+
+    $expect = {
+        'q.enriched.url.title' => 'A[Trump^Pence]',
+        'q.enriched.url.text'  => 'O[Obama^Biden]',
+        'q.enriched.url.enrichedTitle.docSentiment' => '|type=O[negative^positive],score=0.5|'
+    };
+
+    is_deeply($queries, $expect, "Formatted sentiment and keywords ArrayRef with nested title and text ArrayRef with AND");
+
+
+    $data = Alchemy::DataNews->new(
+        api_key => 'TEST',
+        sentiment => {
+            score => {
+                value    => '0.5',
+                operator => '=',
+            },
+            type => ['negative', 'positive'],
+        },
+        keywords => [
+            {
+                text => ['Obama', 'Biden'],
+                join => 'AND',
+            },
+            {
+                title => ['Trump', 'Pence'],
+                join  => 'AND',
+            },
+        ],
+    );
+
+    $queries = $data->_format_queries({});
+
+    $expect = {
+        'q.enriched.url.title' => 'A[Trump^Pence]',
+        'q.enriched.url.text'  => 'A[Obama^Biden]',
+        'q.enriched.url.enrichedTitle.docSentiment' => '|type=O[negative^positive],score=0.5|'
+    };
+
+    is_deeply($queries, $expect, "Formatted sentiment and keywords ArrayRef with nested title and text ArrayRef with AND");
 };
 
 done_testing();

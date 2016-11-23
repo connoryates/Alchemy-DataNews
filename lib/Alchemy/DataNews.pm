@@ -117,7 +117,7 @@ sub _format_queries {
     my ($self, $query_form) = @_;
 
     my @query_types = qw(
-        _keyword
+        _keywords
         _taxonomy
         _concepts
         _entity
@@ -193,7 +193,7 @@ sub _format_date_query {
     return $date_query;
 }
 
-sub _format_keyword_query {
+sub _format_keywords_query {
     my $self = shift;
 
     my $keywords = $self->{_keywords};
@@ -433,7 +433,10 @@ sub _format_sentiment_query {
                 my $value    = $score->{value};
                 my $operator = $score->{operator};
 
-                unless ($operator =~ /(?:<|<=|>=|=|>)/) {
+                # API wants this style of operator
+                $operator = '=>' if $operator eq '>=';
+
+                unless ($operator =~ /(?:<|<=|=>|=|>)/) {
                     cluck "Invalid operator, cannot format sentiment query";
                     return undef;
                 }
