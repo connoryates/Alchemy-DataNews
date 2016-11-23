@@ -312,12 +312,12 @@ sub _format_concepts_query {
 
     my $prefix = $self->__get_prefix;
 
-    if (ref($concept) and ref($concept) eq 'ARRAY') {
-        my $search_string = join '^', @{ $concept };
+    if (ref($concepts) and ref($concepts) eq 'ARRAY') {
+        my $search_string = join '^', @{ $concepts };
         $params->{$query_string} = $prefix . '[' . $search_string . ']';
     }
     else {
-        $params->{$query_string} = $prefix . '[' . $concept . ']';
+        $params->{$query_string} = $prefix . '[' . $concepts . ']';
     }
 
     return $params;
