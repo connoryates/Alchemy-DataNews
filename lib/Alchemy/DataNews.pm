@@ -1,11 +1,13 @@
 package Alchemy::DataNews;
 
+# ABSTRACT: Query Watson's Alchemy DataNews API with Perl syntax
+
 use strict;
 use 5.008_005;
 
 use Furl;
 use JSON::XS qw(decode_json);
-use Carp qw(croak cluck);
+use Carp qw(cluck confess);
 use URI;
 use Try::Tiny;
 
@@ -24,7 +26,7 @@ our %UNIT_MAP = (
 sub new {
     my ($class, %data) = @_;
 
-    croak "No API key!" unless defined $data{api_key};
+    confess "No API key!" unless defined $data{api_key};
 
     my $self = bless {
         _timeframe       => $data{timeframe}       || undef,
@@ -46,6 +48,7 @@ sub new {
         _join            => $data{join}            || undef,
         _next            => $data{next}            || undef,   # Allow user to override next and last query if necessary
         _last_query      => $data{last_query}      || undef,
+        _fatal           => $data{fatal}           || undef,
     }, $class;
 
     return $self;
@@ -54,8 +57,8 @@ sub new {
 sub search_news {
     my ($self, $info) = @_;
 
-    croak "Missing required arg : info" unless defined $info;
-    croak "Arg info must be a HashRef"  unless ref($info) eq 'HASH';
+    confess "Missing required arg : info" unless defined $info;
+    confess "Arg info must be a HashRef"  unless ref($info) eq 'HASH';
 
     # Allow the user to specify query methods on construction
     # or on method call
@@ -84,10 +87,10 @@ sub next {
     my $query = shift || $self->{_last_query};
     my $next  = shift || $self->{_next};
 
-    croak "Cannot call method next without a defined next value"
+    confess "Cannot call method next without a defined next value"
       unless defined $next;
 
-    croak "No query cached or specified" unless defined $query;
+    confess "No query cached or specified" unless defined $query;
 
     my $uri = URI->new($query);
        $uri->query_form( next => $next );
@@ -103,7 +106,7 @@ sub _fetch_query {
         my $resp = Furl->new->get($query);
         $content = decode_json( $resp->content );
     } catch {
-        croak "Failed to get News Alert!\nReason : $_";
+        confess "Failed to get News Alert!\nReason : $_";
     };
 
     # No next field if you want raw output!
@@ -144,8 +147,8 @@ sub _format_queries {
 sub _search_news {
     my ($self, $params) = @_;
 
-    croak "Missing required arg : params" unless defined $params;
-    croak "Arg params must be a HashRef" unless ref($params) eq 'HASH';
+    confess "Missing required arg : params" unless defined $params;
+    confess "Arg params must be a HashRef" unless ref($params) eq 'HASH';
 
     $params->{api_key}        = $self->{_api_key};
     $params->{count}          = $self->{_count};
@@ -171,8 +174,8 @@ sub _format_date_query {
 
     my $timeframe = $self->{_timeframe};
 
-    croak "Missing required param : timeframe"  unless defined $timeframe;
-    croak "Arg timeframe must be a HashRef" unless ref($timeframe) eq 'HASH';
+    confess "Missing required param : timeframe"  unless defined $timeframe;
+    confess "Arg timeframe must be a HashRef" unless ref($timeframe) eq 'HASH';
 
     my $start = $timeframe->{start};
     
@@ -199,7 +202,7 @@ sub _format_keywords_query {
 
     my $keywords = $self->{_keywords};
 
-    croak "Missing keywords, cannot format query" unless defined $keywords;
+    confess "Missing keywords, cannot format query" unless defined $keywords;
 
     my $params = {};
 
@@ -384,7 +387,7 @@ sub _format_relations_query {
                 }
             }
             else {
-                cluck "Unknown key in relations argument. Skipping query format";
+                $self->_error("Unknown key in relations argument. Skipping query format");
                 return undef;
             }
         }
@@ -395,7 +398,7 @@ sub _format_relations_query {
         return $rel_string;
     }
     else {
-        croak "Unsupported data type for relations query";
+        confess "Unsupported data type for relations query";
     }
 
     return;
@@ -425,7 +428,7 @@ sub _format_sentiment_query {
             }
         }
         else {
-            cluck "No type key detected in sentiment query, cannot build";
+            $self->_error("No type key detected in sentiment query, cannot build");
             return undef;
         }
 
@@ -438,26 +441,26 @@ sub _format_sentiment_query {
                 $operator = '=>' if $operator eq '>=';
 
                 unless ($operator =~ /(?:<|<=|=>|=|>)/) {
-                    cluck "Invalid operator, cannot format sentiment query";
+                    $self->_error("Invalid operator, cannot format sentiment query");
                     return undef;
                 }
 
                 $sent_string .= 'score' . $operator . $value . '|';
             }
             else {
-                cluck "Unsupported data structure in sentiment value, cannot build sentiment query";
+                $self->_error("Unsupported data structure in sentiment value, cannot build sentiment query");
                 return undef;
             }
         }
         else {
-            cluck "No score key detected in sentiment query, cannot build";
+            $self->_error("No score key detected in sentiment query, cannot build");
             return undef;
         }
 
         $params->{$query_string} = $sent_string;
     }
     else {
-        cluck "Unsupported data structure in sentiment value, cannot build sentiment query";
+        $self->_error("Unsupported data structure in sentiment value, cannot build sentiment query");
         return undef;
     }
 
@@ -490,6 +493,16 @@ sub _format_return_fields {
     return 'enriched.url.url,enriched.url.title';
 }
 
+sub _error {
+    my ($self, $message) = @_;
+
+    defined $self->{_fatal}
+      ? confess "$message"
+      : cluck "$message";
+
+    return;
+}
+
 sub __get_prefix {
     my $self = shift;
     my $join = shift or undef;
@@ -497,7 +510,8 @@ sub __get_prefix {
     $join ||= defined $self->{_join} ? $self->{_join} : 'OR';
 
     unless ($join =~ /(?:^\bOR\b$|^\bAND\b$)/) {
-        cluck "Unsupported join type, defaulting to OR";
+        $self->_error("Unsupported join type $join");
+        cluck "Defaulting to OR";
         return 'O';
     }
 

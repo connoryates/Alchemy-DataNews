@@ -2,6 +2,7 @@ use strict;
 use warnings;
 
 use Test::More;
+use Test::Exception;
 
 use_ok 'Alchemy::DataNews';
 use_ok 'Data::Dumper';
@@ -805,6 +806,25 @@ subtest 'Complex queries' => sub {
     };
 
     is_deeply($queries, $expect, "Formatted sentiment and keywords ArrayRef with nested title and text ArrayRef with AND");
+};
+
+subtest '_error' => sub {
+
+    {
+        my @warnings;
+
+        local $SIG{__WARN__} = sub {
+           push @warnings, @_;
+        };
+
+        $data->_error('test warn');
+
+        is scalar(@warnings), 1, 'Just one warning';
+        like $warnings[0], qr{test warn}, 'Warned ok';
+    }
+
+    $data->{_fatal} = 1;
+    dies_ok { $data->_error('die') }, 'Died ok';
 };
 
 done_testing();
