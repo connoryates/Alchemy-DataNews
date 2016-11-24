@@ -100,7 +100,7 @@ $alchemy->search_news({
 
 Note that specifying search params during the method call will overwrite any params specified during construction.
 
-# CLASS METHODS
+# ATTRIBUTES
 
 ```timeframe``` - Specifies a timeframe for you search. The ```start``` key indicates when your query should start looking and
 allows for dynamic use of `now`. For example:
@@ -332,6 +332,36 @@ my $alchemy = Alchemy::DataNews->new(
             join => 'AND'
         },
     ],
+);
+```
+
+```fatal``` - If a bad query parameter is passed in during construction or method call, the module will refuse
+to format the query and issue a warning. This means the query will still get run, just without the bad parameter.
+
+However, this might not return the expected results, so you can specify a ```fatal``` attribute that will cause
+the code to die when it runs into a bad parameter and stop the request from going through:
+
+```perl
+my $alchemy = Alchemy::DataNews->new(
+    api_key => $API_KEY,
+    timeframe => {
+        start => {
+            date          => 'now',
+            amount_before => '2',
+            unit          => 'days'
+        },
+        end => 'now',
+    }
+    keywords => [
+        {
+            title => ['Net Neutrality', 'Congress']    # Default to 'OR'
+        },
+        {
+            text  => ['FCC', 'merger', 'Time Warner Cable', 'Google'],
+            join => 'AND'
+        },
+    ],
+    fatal => 1,
 );
 ```
 
