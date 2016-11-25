@@ -890,8 +890,10 @@ Copyright 2016- Connor Yates
 
 =head1 LICENSE
 
-MIT - See LICENSE file for details
+Perl5 - See LICENSE file for details
 
 =head1 SEE ALSO
+
+The official Alchemy Data News API documentation: http://docs.alchemyapi.com/docs/introduction
 
 =cut

@@ -1,5 +1,5 @@
 {
-   "abstract" : "Blah blah blah",
+   "abstract" : "Perl style syntax for IBM Watson's Data News API",
    "author" : [
       "Connor Yates <connor.t.yates@gmail.com>"
    ],

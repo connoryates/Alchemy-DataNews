@@ -412,4 +412,4 @@ Connor Yates
 
 # LICENSE
 
-MIT - see license file
+Perl5 - see license file
