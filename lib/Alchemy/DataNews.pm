@@ -92,8 +92,10 @@ sub next {
 
     confess "No query cached or specified" unless defined $query;
 
-    my $uri = URI->new($query);
-       $uri->query_form( next => $next );
+    my $uri   = URI->new($query);
+    my %parts = $uri->query_form;
+
+    $uri->query_form( %parts, next => $next );
 
     return $self->_fetch_query($uri->as_string);   
 }
@@ -111,7 +113,7 @@ sub _fetch_query {
 
     # No next field if you want raw output!
     if (defined $content and ref($content) and ref($content) eq 'HASH') {
-        $self->{_next} = $content->{result}->{next} || '';
+        $self->{_next} = $content->{result}->{next} || undef;
     }
 
     return $content;
@@ -159,7 +161,6 @@ sub _search_news {
     $params->{dedupThreshold} = $self->{_dedup_threshold};
     $params->{maxResults}     = $self->{_max_results};
     $params->{timeSlice}      = $self->{_time_slice};
-    $params->{rank}           = $self->{_rank};
 
     delete $params->{$_} for grep { !defined $params->{$_} } (keys %$params);
 
@@ -333,7 +334,7 @@ sub _format_concepts_query {
 }
 
 sub _format_entity_query {
-    my $self   = shift;
+    my $self    = shift;
     my $entity = $self->{_entity};
 
     my $params = {};
@@ -365,6 +366,7 @@ sub _format_relations_query {
     my $relations = $self->{_relations};
     my $params    = {};
 
+    # |subject.entities.entity.type=Googleacton.verb.text=purchasedobject.entities.entity.type=Google|
     my $query_string = 'q.enriched.url.enrichedTitle.relations.relation';
 
     my ($target, $action, $orig_target);
@@ -395,7 +397,11 @@ sub _format_relations_query {
         my $rel_string  = '|' . $target . $action;
            $rel_string .= 'object.entities.entity.type=' . $orig_target . '|';
 
-        return $rel_string;
+        my $query_key   = 'q.enriched.url.enrichedTitle.relations.relation';
+
+	$params->{$query_key} = $rel_string;
+
+	return $params;
     }
     else {
         confess "Unsupported data type for relations query";

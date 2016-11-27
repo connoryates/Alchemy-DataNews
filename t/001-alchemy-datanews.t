@@ -30,22 +30,22 @@ subtest 'Test search_news' => sub {
             },
             type => 'positive',
         },
-#        relations => {
-#            target => 'Google',
-#            action => 'purchased',
-#        },
+        relations => {
+            target => 'Google',
+            action => 'purchased',
+        },
 #        entity => { company => 'Apple' },
 #        concept => ['Automotive Industry', 'Politics'],
 #        taxonomy => ['Movies', 'Politics'],
 #        keywords => 'Obama',
-        keywords => [
-            {
-                title => ['Obama', 'Biden'],
-            },
-            {
-                text => 'Trump'
-            }
-        ],
+#        keywords => [
+#            {
+#                title => ['Obama', 'Biden'],
+#            },
+#            {
+#                text => 'Trump'
+#            }
+#        ],
         timeframe => {
            start => {
                 date          => 'now',
@@ -66,14 +66,9 @@ subtest 'Test next' => sub {
 
     if (not defined $data->{_next}) {
         $data->search_news({
-            keywords => [
-                {
-                    title => ['Obama', 'Biden'],
-                },
-                {
-                    text => 'Trump'
-                }
-            ],
+            keywords => {
+                text => 'Trump'
+            },
             timeframe => {
                start => {
                     date          => 'now',
@@ -355,9 +350,13 @@ subtest 'Format relations query' => sub {
     );
 
     my $rel_query = $data->_format_relations_query;
-    my $expect = '|subject.entities.entity.type=Googleacton.verb.text=purchasedobject.entities.entity.type=Google|';
 
-    is($rel_query, $expect, "Formatted relations query successfully");
+    my $expect = {
+        'q.enriched.url.enrichedTitle.relations.relation' =>
+          '|subject.entities.entity.type=Googleacton.verb.text=purchasedobject.entities.entity.type=Google|'
+    };
+
+    is_deeply($rel_query, $expect, "Formatted relations query successfully");
 };
 
 subtest 'Format sentiment query' => sub {
