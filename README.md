@@ -40,54 +40,6 @@ $VAR1 = {
           'result' => {
                         'docs' => [
                                     {
-                                      'id' => 'MTcwMDc4MjUzN3wxNDgwNDUwMDE3',
-                                      'timestamp' => 1480450017,
-                                      'source' => {
-                                                    'enriched' => {
-                                                                    'url' => {
-                                                                               'title' => 'Michelle Obama\'s White House State Dinner looks',
-                                                                               'url' => 'http://us.hellomagazine.com/fashion/12016101918181/michelle-obama-state-dinner-looks/11/'
-                                                                             }
-                                                                  }
-                                                  }
-                                    },
-                                    {
-                                      'timestamp' => 1480450015,
-                                      'source' => {
-                                                    'enriched' => {
-                                                                    'url' => {
-                                                                               'url' => 'http://us.hellomagazine.com/fashion/12016101918181/michelle-obama-state-dinner-looks/7/',
-                                                                               'title' => 'Michelle Obama\'s White House State Dinner looks'
-                                                                             }
-                                                                  }
-                                                  },
-                                      'id' => 'MTcwMDY3Mjk3MnwxNDgwNDUwMDE1'
-                                    },
-                                    {
-                                      'id' => 'MTY5NTk1NjAxN3wxNDgwNDQ5NTM3',
-                                      'timestamp' => 1480449537,
-                                      'source' => {
-                                                    'enriched' => {
-                                                                    'url' => {
-                                                                               'url' => 'http://us.hellomagazine.com/fashion/12016101918181/michelle-obama-state-dinner-looks/10/',
-                                                                               'title' => 'Michelle Obama\'s White House State Dinner looks'
-                                                                             }
-                                                                  }
-                                                  }
-                                    },
-                                    {
-                                      'id' => 'MTY5NDc5NTI5M3wxNDgwNDQ5NDE1',
-                                      'source' => {
-                                                    'enriched' => {
-                                                                    'url' => {
-                                                                               'title' => 'Michelle Obama\'s White House State Dinner looks',
-                                                                               'url' => 'http://us.hellomagazine.com/fashion/12016101918181/michelle-obama-state-dinner-looks/4/'
-                                                                             }
-                                                                  }
-                                                  },
-                                      'timestamp' => 1480449415
-                                    },
-                                    {
                                       'id' => 'MTY5MDkyODI0M3wxNDgwNDQ4NzUy',
                                       'timestamp' => 1480448752,
                                       'source' => {
@@ -95,30 +47,6 @@ $VAR1 = {
                                                                     'url' => {
                                                                                'url' => 'http://us.hellomagazine.com/fashion/12016101918181/michelle-obama-state-dinner-looks/3/',
                                                                                'title' => 'Michelle Obama\'s White House State Dinner looks'
-                                                                             }
-                                                                  }
-                                                  }
-                                    },
-                                    {
-                                      'id' => 'MTY4NzMwMTU3OHwxNDgwNDQ4NjI4',
-                                      'timestamp' => 1480448628,
-                                      'source' => {
-                                                    'enriched' => {
-                                                                    'url' => {
-                                                                               'url' => 'http://us.hellomagazine.com/fashion/12016101918181/michelle-obama-state-dinner-looks/1/',
-                                                                               'title' => 'Michelle Obama\'s White House State Dinner looks'
-                                                                             }
-                                                                  }
-                                                  }
-                                    },
-                                    {
-                                      'id' => 'MTY4NTY2MTQxMHwxNDgwNDQ4MjYz',
-                                      'timestamp' => 1480448263,
-                                      'source' => {
-                                                    'enriched' => {
-                                                                    'url' => {
-                                                                               'title' => "President Obama: \x{2018}Michelle will never run for office\x{2019}",
-                                                                               'url' => 'https://www.yahoo.com/news/president-obama-michelle-will-never-run-for-office-182845749.html?.tsrc=jtc_news_index'
                                                                              }
                                                                   }
                                                   }
@@ -147,18 +75,6 @@ $VAR1 = {
                                                   },
                                       'timestamp' => 1480447598
                                     },
-                                    {
-                                      'id' => 'MTY3OTYyMjMxN3wxNDgwNDQ3NDgw',
-                                      'timestamp' => 1480447480,
-                                      'source' => {
-                                                    'enriched' => {
-                                                                    'url' => {
-                                                                               'title' => 'Trump rollback of Obama climate agenda may prove challenging',
-                                                                               'url' => 'http://www.statesman.com/news/national-govt--politics/trump-rollback-obama-climate-agenda-may-prove-challenging/Vacei78mvh9KFyCUFGidBJ/'
-                                                                             }
-                                                                  }
-                                                  }
-                                    }
                                   ],
                         'next' => 'MTE0MDA4NTc3MDAzNDY1NDg2fE1UWTNPRE13T1Rrd05Id3hORGd3TkRRM05qQTV8OTM2OTA2OTY5NzE5MDkwNjgyfE1UWTNPVFl5TWpNeE4zd3hORGd3TkRRM05EZ3d8NzUxMzA5NTEyMjExNzE2MTYwNHx8MTUyNjY0OTU2MTMyMzgyODIwODh8TVRZM09ETTFPRFU0TW53eE5EZ3dORFEzTlRrNA',
                         'status' => 'OK'
