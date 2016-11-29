@@ -111,6 +111,7 @@ subtest 'Format date query' => sub {
 };
 
 subtest 'Format keywords query' => sub {
+    # Testing ArrayRefs for title and text
     $data = Alchemy::DataNews->new(
         api_key  => 'TEST',
         keywords => [
@@ -133,6 +134,7 @@ subtest 'Format keywords query' => sub {
     is_deeply($expect, $keywords_query, "Formatted keywords query successfully");
 
 
+    # Testing ArrayRefs for title and text with one custom AND join
     $data = Alchemy::DataNews->new(
         api_key  => 'TEST',
         keywords => [
@@ -154,6 +156,7 @@ subtest 'Format keywords query' => sub {
     $keywords_query = $data->_format_keywords_query;
 
 
+    # Testing ArrayRefs for title and text with two custom AND joins
     $data = Alchemy::DataNews->new(
         api_key  => 'TEST',
         keywords => [
@@ -178,6 +181,7 @@ subtest 'Format keywords query' => sub {
     is_deeply($expect, $keywords_query, "Formatted keywords query successfully");
 
 
+    # Testing ArrayRef title and single value text
     $data = Alchemy::DataNews->new(
         api_key  => 'TEST',
         keywords => [
@@ -199,6 +203,8 @@ subtest 'Format keywords query' => sub {
 
     is_deeply($keywords_query, $expect, "Formatted keywords query successfully");
 
+
+    # Testing single values for title and text
     $data = Alchemy::DataNews->new(
         api_key  => 'TEST',
         keywords => [
@@ -221,6 +227,7 @@ subtest 'Format keywords query' => sub {
     is_deeply($expect, $keywords_query, "Formatted keywords query successfully");
 
 
+    # Testing unspecified ArrayRef keyword - should default to text
     $data = Alchemy::DataNews->new(
         api_key  => 'TEST',
         keywords => [ 'Obama', 'Trump'],
@@ -235,6 +242,7 @@ subtest 'Format keywords query' => sub {
     is_deeply($expect, $keywords_query, "Formatted keywords query successfully");
 
 
+    # Testing unspecified single value keyword - should default to text
     $data = Alchemy::DataNews->new(
         api_key  => 'TEST',
         keywords => 'Obama',
@@ -250,6 +258,7 @@ subtest 'Format keywords query' => sub {
 };
 
 subtest 'Format taxonomy query' => sub {
+    # Testing ArrayRef taxonomy
     $data = Alchemy::DataNews->new(
         api_key  => 'TEST',
         taxonomy => ['Movies', 'Politics'],
@@ -264,6 +273,7 @@ subtest 'Format taxonomy query' => sub {
     is_deeply($txn_query, $expect, "Formatted taxonomy query successfully");
 
 
+    # Testing ArrayRef taxonomy with custom AND join
     $data = Alchemy::DataNews->new(
         api_key  => 'TEST',
         taxonomy => ['Movies', 'Politics'],
@@ -279,6 +289,7 @@ subtest 'Format taxonomy query' => sub {
     is_deeply($txn_query, $expect, "Formatted taxonomy query successfully");
 
 
+    # Testing single value taxonomy
     $data = Alchemy::DataNews->new(
         api_key  => 'TEST',
         taxonomy => 'Movies',
@@ -294,6 +305,7 @@ subtest 'Format taxonomy query' => sub {
 };
 
 subtest 'Format entity query' => sub {
+    # Testing single value entity
     $data = Alchemy::DataNews->new(
         api_key => 'TEST',
         entity  => { company => 'Apple' },
@@ -309,6 +321,7 @@ subtest 'Format entity query' => sub {
     is_deeply($entity_query, $expect, "Formatted entity query successfully");
 
 
+    # Testing ArrayRef of entities
     $data = Alchemy::DataNews->new(
         api_key => 'TEST',
         entity  => { company => ['Apple', 'Microsoft'] },
@@ -324,6 +337,7 @@ subtest 'Format entity query' => sub {
     is_deeply($entity_query, $expect, "Formatted entity query successfully");
 
 
+    # Testing ArrayRef of entities with custom AND join
     $data = Alchemy::DataNews->new(
         api_key => 'TEST',
         entity  => { company => ['Apple', 'Microsoft'] },
@@ -341,6 +355,7 @@ subtest 'Format entity query' => sub {
 };
 
 subtest 'Format relations query' => sub {
+    # Testing single value relations query
     $data = Alchemy::DataNews->new(
         api_key => 'TEST',
         relations => {
@@ -354,6 +369,182 @@ subtest 'Format relations query' => sub {
     my $expect = {
         'q.enriched.url.enrichedTitle.relations.relation' =>
           '|subject.entities.entity.type=Company,action.verb.text=purchased,object.entities.entity.type=Company|'
+    };
+
+    is_deeply($rel_query, $expect, "Formatted relations query successfully");
+
+
+    # Testing ArrayRef action relations query
+    $data = Alchemy::DataNews->new(
+        api_key => 'TEST',
+        relations => {
+            entity => 'Company',
+            action => ['purchased', 'bought'],
+        },        
+    );
+
+    $rel_query = $data->_format_relations_query;
+
+    $expect = {
+        'q.enriched.url.enrichedTitle.relations.relation' =>
+          '|subject.entities.entity.type=Company,action.verb.text=O[purchased^bought],object.entities.entity.type=Company|',
+    };
+
+    is_deeply($rel_query, $expect, "Formatted relations query successfully");
+
+
+    # Testing ArrayRef action and ArrayRef entity relations query
+    $data = Alchemy::DataNews->new(
+        api_key => 'TEST',
+        relations => {
+            entity => ['Company', 'Person'],
+            action => ['purchased', 'bought'],
+        },        
+    );
+
+    $rel_query = $data->_format_relations_query;
+
+    $expect = {
+        'q.enriched.url.enrichedTitle.relations.relation' =>
+          '|subject.entities.entity.type=O[Company^Person],action.verb.text=O[purchased^bought],object.entities.entity.type=O[Company^Person]|',
+    };
+
+    is_deeply($rel_query, $expect, "Formatted relations query successfully");
+
+
+    # Testing ArrayRef action and ArrayRef entity relations query
+    $data = Alchemy::DataNews->new(
+        api_key => 'TEST',
+        relations => {
+            join   => 'AND',
+            entity => ['Company', 'Person'],
+            action => ['purchased', 'bought'],
+        },        
+    );
+
+    $rel_query = $data->_format_relations_query;
+
+    $expect = {
+        'q.enriched.url.enrichedTitle.relations.relation' =>
+          '|subject.entities.entity.type=A[Company^Person],action.verb.text=A[purchased^bought],object.entities.entity.type=A[Company^Person]|',
+    };
+
+    is_deeply($rel_query, $expect, "Formatted relations query successfully");
+
+
+    # Testing single value action and HashRef entity relations query with ArrayRef value and custom AND join
+    $data = Alchemy::DataNews->new(
+        api_key => 'TEST',
+        relations => {
+            entity => {
+                value => ['Company', 'Person'],
+                join  => 'AND',
+            },
+            action => 'purchased',
+        },        
+    );
+
+    $rel_query = $data->_format_relations_query;
+
+    $expect = {
+        'q.enriched.url.enrichedTitle.relations.relation' =>
+          '|subject.entities.entity.type=A[Company^Person],action.verb.text=purchased,object.entities.entity.type=A[Company^Person]|',
+    };
+
+    is_deeply($rel_query, $expect, "Formatted relations query successfully");
+
+
+    # Testing ArrayRef value action and HashRef entity relations query with ArrayRef value and custom AND join
+    $data = Alchemy::DataNews->new(
+        api_key => 'TEST',
+        relations => {
+            entity => {
+                value => ['Company', 'Person'],
+                join  => 'AND',
+            },
+            action => ['purchased', 'bought'],
+        },        
+    );
+
+    $rel_query = $data->_format_relations_query;
+
+    $expect = {
+        'q.enriched.url.enrichedTitle.relations.relation' =>
+          '|subject.entities.entity.type=A[Company^Person],action.verb.text=O[purchased^bought],object.entities.entity.type=A[Company^Person]|',
+    };
+
+    is_deeply($rel_query, $expect, "Formatted relations query successfully");
+
+
+    # Testing HashRef value action and HashRef entity relations query with ArrayRef value and custom AND join
+    $data = Alchemy::DataNews->new(
+        api_key => 'TEST',
+        relations => {
+            entity => {
+                value => ['Company', 'Person'],
+                join  => 'AND',
+            },
+            action => { value => 'purchased' },
+        },        
+    );
+
+    $rel_query = $data->_format_relations_query;
+
+    $expect = {
+        'q.enriched.url.enrichedTitle.relations.relation' =>
+          '|subject.entities.entity.type=A[Company^Person],action.verb.text=purchased,object.entities.entity.type=A[Company^Person]|',
+    };
+
+    is_deeply($rel_query, $expect, "Formatted relations query successfully");
+
+
+    # Testing HashRef with ArrayRef value and custom OR join and HashRef entity relations
+    # query with ArrayRef value and custom AND join
+    $data = Alchemy::DataNews->new(
+        api_key => 'TEST',
+        relations => {
+            entity => {
+                value => ['Company', 'Person'],
+                join  => 'AND',
+            },
+            action => {
+                value => ['purchased', 'bought'],
+                join  => 'OR',
+            },
+        },        
+    );
+
+    $rel_query = $data->_format_relations_query;
+
+    $expect = {
+        'q.enriched.url.enrichedTitle.relations.relation' =>
+          '|subject.entities.entity.type=A[Company^Person],action.verb.text=O[purchased^bought],object.entities.entity.type=A[Company^Person]|',
+    };
+
+    is_deeply($rel_query, $expect, "Formatted relations query successfully");
+
+
+    # Testing HashRef with ArrayRef value and custom OR join and HashRef entity relations
+    # query with ArrayRef value and custom AND join
+    $data = Alchemy::DataNews->new(
+        api_key => 'TEST',
+        relations => {
+            entity => {
+                value => ['Company', 'Person'],
+                join  => 'AND',
+            },
+            action => {
+                value => ['purchased', 'bought'],
+                join  => 'AND',
+            },
+        },        
+    );
+
+    $rel_query = $data->_format_relations_query;
+
+    $expect = {
+        'q.enriched.url.enrichedTitle.relations.relation' =>
+          '|subject.entities.entity.type=A[Company^Person],action.verb.text=A[purchased^bought],object.entities.entity.type=A[Company^Person]|',
     };
 
     is_deeply($rel_query, $expect, "Formatted relations query successfully");

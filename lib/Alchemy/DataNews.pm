@@ -102,9 +102,6 @@ sub next {
 sub _fetch_query {
     my ($self, $query) = @_;
 
-    use Data::Dumper;
-    print Dumper $query;
-
     my $content;
     try {
         my $resp = Furl->new->get($query);
@@ -370,11 +367,48 @@ sub _format_relations_query {
     my $query_string = 'q.enriched.url.enrichedTitle.relations.relation';
 
     my ($entity, $action, $orig_entity);
- 
+
     if (ref($relations) and ref($relations) eq 'HASH') {
+
+        $self->{_join} = $relations->{join} || undef;
+
         if (defined $relations->{entity}) {
-            $entity      = 'subject.entities.entity.type=' . $relations->{entity};
-            $orig_entity = $relations->{entity};
+            if (ref($relations->{entity}) and ref($relations->{entity}) eq 'ARRAY') {
+                my $search_string = join '^', @{ $relations->{entity} };
+                my $prefix = $self->__get_prefix;
+
+                $search_string = $orig_entity = $prefix . '[' . $search_string . ']';
+                $entity = 'subject.entities.entity.type=' . $search_string;
+            }
+            elsif (ref($relations->{entity}) and ref($relations->{entity}) eq 'HASH') {
+                $self->{_join} = $relations->{entity}->{join} || undef;
+
+                if (ref($relations->{entity}->{value}) and ref($relations->{entity}->{value}) eq 'ARRAY') {
+                    my $search_string = join '^', @{ $relations->{entity}->{value} };
+                    my $prefix = $self->__get_prefix;
+
+                    $search_string = $orig_entity = $prefix . '[' . $search_string . ']';
+                    $entity = 'subject.entities.entity.type=' . $search_string;
+
+                    # Clear this attribute for the action query
+                    $self->{_join} = undef;
+                }
+                elsif (!ref($relations->{entity}->{value})) {
+                    $entity      = 'subject.entities.entity.type=' . $relations->{entity}->{value};
+                    $orig_entity = $relations->{entity};
+                }
+                else {
+                    $self->_error("Unsupported data type for relations entity key");
+                    return undef;
+                }
+            }
+            elsif (!ref($relations->{entity})) {
+                $entity      = 'subject.entities.entity.type=' . $relations->{entity};
+                $orig_entity = $relations->{entity};
+            }
+            else {
+                $self->_error("Unsupported data type for relations key `entity`");
+            }
         }
 	    else {
             $self->_error("Relations query must be a HashRef and have a defined entity and action. Skipping query format");
@@ -388,8 +422,29 @@ sub _format_relations_query {
 
                 $action = 'action.verb.text=' . $prefix . '[' . $search_string . '],';
             }
-            else {
+            elsif (ref($relations->{action}) and ref($relations->{action}) eq 'HASH') {
+                $self->{_join} = $relations->{action}->{join} || undef;
+
+                if (ref($relations->{action}->{value}) and ref($relations->{action}->{value}) eq 'ARRAY') {
+                    my $search_string = join '^', @{ $relations->{action}->{value} };
+                    my $prefix = $self->__get_prefix;
+
+                    $search_string = $prefix . '[' . $search_string . ']';
+                    $action = 'action.verb.text=' . $search_string . ',';
+                }
+                elsif (!ref($relations->{action}->{value})) {
+                    $action = 'action.verb.text=' . $relations->{action}->{value} . ',';
+                }
+                else {
+                    $self->_error("Unsupported data type for relations key `action`");
+                    return undef;
+                }
+            }
+            elsif (!ref($relations->{action})) {
                 $action = 'action.verb.text=' . $relations->{action} . ',';
+            }
+            else {
+                $self->_error("Unsupported data type for relations key `action`");
             }
 	    }
 	    else {
@@ -402,12 +457,13 @@ sub _format_relations_query {
 
         my $query_key   = 'q.enriched.url.enrichedTitle.relations.relation';
 
-	$params->{$query_key} = $rel_string;
+	    $params->{$query_key} = $rel_string;
 
-	return $params;
+	    return $params;
     }
     else {
-        confess "Unsupported data type for relations query";
+        $self->_error("Unsupported data type for relations query, skipping relations query");
+        return undef;
     }
 
     return;
