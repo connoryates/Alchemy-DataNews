@@ -449,19 +449,19 @@ sub _format_relations_query {
                 $self->_error("Unsupported data type for relations key `action`");
             }
 	    }
-	    else {
+        else {
             $self->_error("Relations query must be a HashRef and have a defined entity and action. Skipping query format");
             return undef;
-	    }
+        }
 
         my $rel_string  = '|' . $entity . ',' . $action;
            $rel_string .= 'object.entities.entity.type=' . $orig_entity . '|';
 
         my $query_key   = 'q.enriched.url.enrichedTitle.relations.relation';
 
-	    $params->{$query_key} = $rel_string;
+        $params->{$query_key} = $rel_string;
 
-	    return $params;
+        return $params;
     }
     else {
         $self->_error("Unsupported data type for relations query, skipping relations query");
