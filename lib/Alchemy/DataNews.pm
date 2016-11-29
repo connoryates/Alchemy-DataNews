@@ -331,8 +331,10 @@ sub _format_concepts_query {
 }
 
 sub _format_entity_query {
-    my $self    = shift;
+    my $self   = shift;
     my $entity = $self->{_entity};
+
+    $self->_error("Missing required param : entity") unless defined $entity;
 
     my $params = {};
 
@@ -410,10 +412,10 @@ sub _format_relations_query {
                 $self->_error("Unsupported data type for relations key `entity`");
             }
         }
-	    else {
+        else {
             $self->_error("Relations query must be a HashRef and have a defined entity and action. Skipping query format");
             return undef;
-	    }
+        }
 
         if (defined $relations->{action}) {
             if (ref($relations->{action}) and ref($relations->{action}) eq 'ARRAY') {
