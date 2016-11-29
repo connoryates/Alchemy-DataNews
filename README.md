@@ -227,9 +227,9 @@ my $alchemy = Alchemy::DataNews->new(
 
 Also accepts an ArrayRef as the nested hash value.
 
-```relations``` - Specify a "target" and an "action" to search. An action can be a keyword (like a verb) to refine your searches.
+```relations``` - Specify a "entity" and an "action" to search. An action can be a keyword (like a verb) to refine your searches.
 
-For example, see if Google bought anything of interest in the last 2 days:
+For example, see if a company bought anything of interest in the last 2 days:
 
 ```perl
 my $alchemy = Alchemy::DataNews->new(
@@ -243,7 +243,7 @@ my $alchemy = Alchemy::DataNews->new(
         end => 'now',
     },
     relations => {
-        target => 'Google',
+        entity => 'Company',
         action => 'purchased',
     },
 

@@ -1,5 +1,4 @@
 package Alchemy::DataNews;
-
 # ABSTRACT: Query Watson's Alchemy DataNews API with Perl syntax
 
 use strict;
@@ -103,10 +102,13 @@ sub next {
 sub _fetch_query {
     my ($self, $query) = @_;
 
+    use Data::Dumper;
+    print Dumper $query;
+
     my $content;
     try {
         my $resp = Furl->new->get($query);
-        $content = decode_json( $resp->content );
+        $content = decode_json($resp->content);
     } catch {
         confess "Failed to get News Alert!\nReason : $_";
     };
@@ -181,7 +183,7 @@ sub _format_date_query {
     my $start = $timeframe->{start};
     
     my $start_string;
-    if ( defined $start and ref($start) and ref($start) eq 'HASH') {
+    if (defined $start and ref($start) and ref($start) eq 'HASH') {
         my $unit = $UNIT_MAP{ $start->{unit} };
 
         $start_string = $start->{date} . "-" . $start->{amount_before} . $unit;
@@ -190,12 +192,10 @@ sub _format_date_query {
         $start_string = "now-2d";
     }
 
-    my $date_query = {
+    return {
         start => $start_string,
         end   => $timeframe->{end} || 'now',
     };
-
-    return $date_query;
 }
 
 sub _format_keywords_query {
@@ -366,36 +366,39 @@ sub _format_relations_query {
     my $relations = $self->{_relations};
     my $params    = {};
 
-    # |subject.entities.entity.type=Googleacton.verb.text=purchasedobject.entities.entity.type=Google|
+    # |subject.entities.entity.type=Google,action.verb.text=purchased,object.entities.entity.type=Google|
     my $query_string = 'q.enriched.url.enrichedTitle.relations.relation';
 
-    my ($target, $action, $orig_target);
+    my ($entity, $action, $orig_entity);
  
     if (ref($relations) and ref($relations) eq 'HASH') {
-        while ( my ($key, $value) = each %$relations ) {
-            if ($key eq 'target') {
-                $target      = 'subject.entities.entity.type=' . $value;
-                $orig_target = $value;
-            }
-            elsif ($key eq 'action') {
-                if (ref($value) and ref($value) eq 'ARRAY') {
-                    my $search_string = join '^', @$value;
-                    my $prefix = $self->__get_prefix;
+        if (defined $relations->{entity}) {
+            $entity      = 'subject.entities.entity.type=' . $relations->{entity};
+            $orig_entity = $relations->{entity};
+        }
+	    else {
+            $self->_error("Relations query must be a HashRef and have a defined entity and action. Skipping query format");
+            return undef;
+	    }
 
-                    $action = 'acton.verb.text=' . $prefix . '[' . $search_string . ']';
-                }
-                else {
-                    $action = 'acton.verb.text=' . $value
-                }
+        if (defined $relations->{action}) {
+            if (ref($relations->{action}) and ref($relations->{action}) eq 'ARRAY') {
+                my $search_string = join '^', @{ $relations->{action} };
+                my $prefix = $self->__get_prefix;
+
+                $action = 'action.verb.text=' . $prefix . '[' . $search_string . '],';
             }
             else {
-                $self->_error("Unknown key in relations argument. Skipping query format");
-                return undef;
+                $action = 'action.verb.text=' . $relations->{action} . ',';
             }
-        }
+	    }
+	    else {
+            $self->_error("Relations query must be a HashRef and have a defined entity and action. Skipping query format");
+            return undef;
+	    }
 
-        my $rel_string  = '|' . $target . $action;
-           $rel_string .= 'object.entities.entity.type=' . $orig_target . '|';
+        my $rel_string  = '|' . $entity . ',' . $action;
+           $rel_string .= 'object.entities.entity.type=' . $orig_entity . '|';
 
         my $query_key   = 'q.enriched.url.enrichedTitle.relations.relation';
 

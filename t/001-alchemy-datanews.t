@@ -3,9 +3,9 @@ use warnings;
 
 use Test::More;
 use Test::Exception;
+use Data::Dumper;
 
 use_ok 'Alchemy::DataNews';
-use_ok 'Data::Dumper';
 
 my $data = Alchemy::DataNews->new(
     api_key => $ENV{API_KEY} // 'TEST',    # Doesn't run any live queries unless $ENV{AUTHOR_TESTS} is set
@@ -23,16 +23,16 @@ subtest 'Test search_news' => sub {
     plan skip_all => 'Skipping author tests' unless $ENV{AUTHOR_TESTS};
 
     my $result = $data->search_news({
-        sentiment => {
-            score => {
-                value    => '0.5',
-                operator => '=>',
-            },
-            type => 'positive',
-        },
+#        sentiment => {
+#            score => {
+#                value    => '0.5',
+#                operator => '=>',
+#            },
+#            type => 'positive',
+#        },
         relations => {
-            target => 'Google',
-            action => 'purchased',
+            entity => 'Company',
+            action => 'acquire',
         },
 #        entity => { company => 'Apple' },
 #        concept => ['Automotive Industry', 'Politics'],
@@ -344,7 +344,7 @@ subtest 'Format relations query' => sub {
     $data = Alchemy::DataNews->new(
         api_key => 'TEST',
         relations => {
-            target => 'Google',
+            entity => 'Company',
             action => 'purchased',
         },        
     );
@@ -353,7 +353,7 @@ subtest 'Format relations query' => sub {
 
     my $expect = {
         'q.enriched.url.enrichedTitle.relations.relation' =>
-          '|subject.entities.entity.type=Googleacton.verb.text=purchasedobject.entities.entity.type=Google|'
+          '|subject.entities.entity.type=Company,action.verb.text=purchased,object.entities.entity.type=Company|'
     };
 
     is_deeply($rel_query, $expect, "Formatted relations query successfully");
