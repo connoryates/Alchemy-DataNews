@@ -10,7 +10,7 @@ Coming soon to a CPAN near you...
 use Alchemy::DataNews;
 
 my $alchemy = Alchemy::DataNews->new(
-  api_key => $API_KEY
+    api_key => $API_KEY
 );
 
 my $results = $alchemy->search_news({
@@ -35,12 +35,10 @@ my $results = $alchemy->search_news({
 
 # DESCRIPTION
 
-Alchemy::DataNews is a client for IBM Watson's Alchemy DataNews API. The API is a very powerful
-REST API capable of searching keywords, semantics, tied action words, and word relationships
-across given timeframes. For specific examples of what the API is capable of, please read:
-http://docs.alchemyapi.com/docs/
+Alchemy::DataNews is a client for IBM Watson's Alchemy DataNews API. The API is a very powerful REST API capable of searching keywords, semantics, tied action words, and word relationships
+across given timeframes. For specific examples of what the API is capable of, please read: http://docs.alchemyapi.com/docs/
 
-This module will map Perl syntax into the REST parameters that Watson's DataNews API uses - similar to how ```DBIC``` works.
+This module will map Perl syntax into the REST parameters that Watson's DataNews API uses - similar to how ``DBIC``` and ```Search::Elasticsearch```  works.
 
 # CREDENTIALS
 
@@ -93,7 +91,7 @@ $alchemy->search_news({
             unit          => 'hours'
         },
         end => 'now',
-   }
+    }
 });
 
 ```
@@ -335,11 +333,7 @@ my $alchemy = Alchemy::DataNews->new(
 );
 ```
 
-```fatal``` - If a bad query parameter is passed in during construction or method call, the module will refuse
-to format the query and issue a warning. This means the query will still get run, just without the bad parameter.
-
-However, this might not return the expected results, so you can specify a ```fatal``` attribute that will cause
-the code to die when it runs into a bad parameter and stop the request from going through:
+For relations, you would specify the joins like so:
 
 ```perl
 my $alchemy = Alchemy::DataNews->new(
@@ -351,27 +345,73 @@ my $alchemy = Alchemy::DataNews->new(
             unit          => 'days'
         },
         end => 'now',
-    }
-    keywords => [
-        {
-            title => ['Net Neutrality', 'Congress']    # Default to 'OR'
+    },
+    relations => {
+        entity => {
+            value => ['Company', 'Purchased'],
+            join  => 'AND',
         },
-        {
-            text  => ['FCC', 'merger', 'Time Warner Cable', 'Google'],
-            join => 'AND'
+        action => {
+            value => ['purchased', 'bought'],
+            join  => 'OR',
         },
-    ],
+    },
+
+);
+```
+
+```fatal``` - If a bad query parameter is passed in during construction or method call, the module will refuse
+to format the query and issue a warning. This means the query will still get run, just without the bad parameter.
+
+However, this might not return the expected results, so you can specify a ```fatal``` attribute that will cause
+the code to die when it runs into a bad parameter and stop the request from going through:
+
+```perl
+my $alchemy = Alchemy::DataNews->new(
+    api_key => $API_KEY,
     fatal => 1,
 );
 ```
 
+Let's say you pass a bad parameter to the keyword key:
+
+```perl
+$alchemy->search_news({
+    timeframe => {
+        start => {
+            date          => 'now',
+            amount_before => '2',
+            unit          => 'days'
+        },
+        end => 'now',
+    }
+    keywords => [
+        {
+            header => ['Net Neutrality', 'Congress']    # Default to 'OR'
+        },
+        {
+            content  => ['FCC', 'merger', 'Time Warner Cable', 'Google'],
+            join => 'AND'
+        },
+    ],
+});
+```
+
+The keys "header" and "content" will not be recognized by the method, and it will skip building the keywords query, issue a warning, return ```undef```,
+but will still run the query with the parameters it was able to build.
+
+```fatal``` overrides this behaivor to ```die``` instead.
+
 # INSTANCE METHODS
 
-```search_news``` - formats and sends the REST request to Watson
+```search_news``` - formats and sends the REST request to Watson. By default, this method will request JSON from Watson and decode the returned JSON structure
+to a Perl data structure. If you want to keep the raw output, all you need to do is specify ```raw_output => 1``` during construction or method call. Other valid
+output types are ```XML``` and ```RDF``` - these are only available for ```raw_output```.
 
-```next``` - returns the next page of results. If there is a next page of results, the previous result will 
-contain key "next" with a token as the value that simply needs to be appended to the previous query. This
-module will cache the previous query and next token (if it exists) so you can call the next page of results like:
+
+```next``` - returns the next page of results. If there is a next page of results, the previous result will contain key "next" with a token as the value that
+simply needs to be appended to the previous query. This module will cache the previous query and next token (if it exists) so you can call the next page of results
+like:
 
 ```perl
 my $alchemy = Alchemy::DataNews->new(
@@ -404,6 +444,15 @@ If you want to iterate through all pages, you can use ```next``` with a while lo
 while (my $next_results = $alchemy->next) {
     # Do the fun stuff here
 }
+```
+
+Note that you cannot use ```next``` with no args if you return ```raw_output```. You must parse the next token yourself and pass it to the method:
+
+```perl
+# The first argument is the query you want to see the "next" results in.
+# The last query run is automatically cached, so passing in undef will default
+# to the cached query.
+my $next_results = $alchemy->next(undef, $parsed_token);
 ```
 
 # AUTHOR
