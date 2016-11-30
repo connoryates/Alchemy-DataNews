@@ -43,7 +43,7 @@ sub new {
         _entity          => $data{entity}          || undef,
         _relations       => $data{relations}       || undef,
         _sentiment       => $data{sentiment}       || undef,
-        _exact_match     => $data{exact_math}      || undef,
+        _rank            => $data{rank}            || undef,
         _join            => $data{join}            || undef,
         _next            => $data{next}            || undef,   # Allow user to override next and last query if necessary
         _last_query      => $data{last_query}      || undef,
@@ -72,8 +72,8 @@ sub search_news {
     $self->{_timeframe} = $info->{timeframe} if defined $info->{timeframe};
 
     # Query attributes
-    $self->{_exact_match} = $info->{exact_match} if defined $info->{exact_match};
-    $self->{_join}        = $info->{join}        if defined $info->{join};
+    $self->{_rank} = $info->{rank} if defined $info->{rank};
+    $self->{_join} = $info->{join} if defined $info->{join};
 
     my $query_form   = $self->_format_date_query;
     my $formatted    = $self->_format_queries($query_form);
