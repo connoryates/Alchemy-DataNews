@@ -30,13 +30,13 @@ subtest 'Test search_news' => sub {
             },
             type => 'positive',
         },
-        relations => {
-            entity => 'Company',
-            action => 'acquire',
-        },
+#        relations => {
+#            entity => 'Company',
+#            action => 'acquire',
+#        },
 #        entity => { company => 'Apple' },
 #        concept => ['Automotive Industry', 'Politics'],
-#        taxonomy => ['Movies', 'Politics'],
+        taxonomy => ['Movies', 'Politics'],
 #        keywords => 'Obama',
 #        keywords => [
 #            {
@@ -53,7 +53,8 @@ subtest 'Test search_news' => sub {
                 unit          => 'days'
             },
             end => 'now',
-        }
+        },
+        rank => 'High',
     });
 
     is(defined $result, 1, "Got a result back from request");
@@ -571,6 +572,129 @@ subtest 'Format relations query' => sub {
     is_deeply($rel_query, $expect, "Formatted relations query successfully");
 };
 
+subtest 'Format concept query' => sub {
+    # Testing one value for concept
+    $data = Alchemy::DataNews->new(
+        api_key   => 'TEST',
+        concept   => 'Automotive Industry', 
+        timeframe => {
+           start  => {
+                date          => 'now',
+                amount_before => '2',
+                unit          => 'days'
+            },
+            end => 'now',
+        }
+    );
+
+    my $concept_query = $data->_format_concept_query;
+
+    my $expect = {
+        'q.enriched.url.concepts.concept.text' => 'Automotive Industry'
+    };
+
+    is_deeply($concept_query, $expect, "Formatted concept query successfully");
+
+
+    # Testing two values for concept
+    $data = Alchemy::DataNews->new(
+        api_key   => 'TEST',
+        concept   => ['Automotive Industry', 'Politics'],
+        timeframe => {
+           start  => {
+                date          => 'now',
+                amount_before => '2',
+                unit          => 'days'
+            },
+            end => 'now',
+        }
+    );
+
+    $concept_query = $data->_format_concept_query;
+
+    $expect = {
+        'q.enriched.url.concepts.concept.text' => 'O[Automotive Industry^Politics]'
+    };
+
+    is_deeply($concept_query, $expect, "Formatted concept query successfully");
+
+
+    # Testing HashRef as concept value
+    $data = Alchemy::DataNews->new(
+        api_key   => 'TEST',
+        concept   => {
+            value => 'Automotive Industry',
+        },
+        timeframe => {
+           start  => {
+                date          => 'now',
+                amount_before => '2',
+                unit          => 'days'
+            },
+            end => 'now',
+        }
+    );
+
+    $concept_query = $data->_format_concept_query;
+
+    $expect = {
+        'q.enriched.url.concepts.concept.text' => 'Automotive Industry'
+    };
+
+    is_deeply($concept_query, $expect, "Formatted concept query successfully");
+
+
+    # Testing HashRef as concept value with ArrayRef value
+    $data = Alchemy::DataNews->new(
+        api_key   => 'TEST',
+        concept   => {
+            value => ['Automotive Industry', 'Politics'],
+        },
+        timeframe => {
+           start  => {
+                date          => 'now',
+                amount_before => '2',
+                unit          => 'days'
+            },
+            end => 'now',
+        }
+    );
+
+    $concept_query = $data->_format_concept_query;
+
+    $expect = {
+        'q.enriched.url.concepts.concept.text' => 'O[Automotive Industry^Politics]'
+    };
+
+    is_deeply($concept_query, $expect, "Formatted concept query successfully");
+
+
+    # Testing HashRef as concept value with ArrayRef value and custom AND join
+    $data = Alchemy::DataNews->new(
+        api_key   => 'TEST',
+        concept   => {
+            value => ['Automotive Industry', 'Politics'],
+            join  => 'AND',
+        },
+        timeframe => {
+           start  => {
+                date          => 'now',
+                amount_before => '2',
+                unit          => 'days'
+            },
+            end => 'now',
+        }
+    );
+
+    $concept_query = $data->_format_concept_query;
+
+    $expect = {
+        'q.enriched.url.concepts.concept.text' => 'A[Automotive Industry^Politics]'
+    };
+
+    is_deeply($concept_query, $expect, "Formatted concept query successfully");
+};
+
 subtest 'Format sentiment query' => sub {
     # Testing one value for type and =>
     $data = Alchemy::DataNews->new(
@@ -782,7 +906,264 @@ subtest 'Format sentiment query' => sub {
     is_deeply($sent_query, $expect, "Formatted sentiment query succesfully");
 };
 
+subtest 'Testing rank queries' => sub {
+    # Testing one rank: High
+    $data = Alchemy::DataNews->new(
+        api_key => 'TEST',
+        rank    => 'High',
+    );
+
+    my $rank_query = $data->_format_rank_query;
+
+    my $expect = {
+        'rank' => 'High',
+    };
+
+    is_deeply($rank_query, $expect, "Formatted rank query successfully");
+
+
+    # Testing one rank: Medium
+    $data = Alchemy::DataNews->new(
+        api_key => 'TEST',
+        rank    => 'Medium',
+    );
+
+    $rank_query = $data->_format_rank_query;
+
+    $expect = {
+        'rank' => 'Medium',
+    };
+
+    is_deeply($rank_query, $expect, "Formatted rank query successfully");
+
+
+    # Testing one rank: Low
+    $data = Alchemy::DataNews->new(
+        api_key => 'TEST',
+        rank    => 'Low',
+    );
+
+    $rank_query = $data->_format_rank_query;
+
+    $expect = {
+        'rank' => 'Low',
+    };
+
+    is_deeply($rank_query, $expect, "Formatted rank query successfully");
+
+
+    # Testing one rank: Unknown
+    $data = Alchemy::DataNews->new(
+        api_key => 'TEST',
+        rank    => 'Unknown',
+    );
+
+    $rank_query = $data->_format_rank_query;
+
+    $expect = {
+        'rank' => 'Unknown',
+    };
+
+    is_deeply($rank_query, $expect, "Formatted rank query successfully");
+
+
+    # Testing multiple ranks: Unknown, High
+    $data = Alchemy::DataNews->new(
+        api_key => 'TEST',
+        rank    => ['Unknown', 'High']
+    );
+
+    $rank_query = $data->_format_rank_query;
+
+    $expect = {
+        'rank' => 'O[Unknown^High]',
+    };
+
+    is_deeply($rank_query, $expect, "Formatted rank query successfully");
+
+
+    # Testing multiple ranks: Unknown, Medium
+    $data = Alchemy::DataNews->new(
+        api_key => 'TEST',
+        rank    => ['Unknown', 'Medium']
+    );
+
+    $rank_query = $data->_format_rank_query;
+
+    $expect = {
+        'rank' => 'O[Unknown^Medium]',
+    };
+
+    is_deeply($rank_query, $expect, "Formatted rank query successfully");
+
+
+    # Testing multiple ranks: Unknown, Low
+    $data = Alchemy::DataNews->new(
+        api_key => 'TEST',
+        rank    => ['Unknown', 'Low']
+    );
+
+    $rank_query = $data->_format_rank_query;
+
+    $expect = {
+        'rank' => 'O[Unknown^Low]',
+    };
+
+    is_deeply($rank_query, $expect, "Formatted rank query successfully");
+
+
+    # Testing multiple ranks: High, Medium
+    $data = Alchemy::DataNews->new(
+        api_key => 'TEST',
+        rank    => ['High', 'Medium']
+    );
+
+    $rank_query = $data->_format_rank_query;
+
+    $expect = {
+        'rank' => 'O[High^Medium]',
+    };
+
+    is_deeply($rank_query, $expect, "Formatted rank query successfully");
+
+
+    # Testing multiple ranks: High, Low
+    $data = Alchemy::DataNews->new(
+        api_key => 'TEST',
+        rank    => ['High', 'Low']
+    );
+
+    $rank_query = $data->_format_rank_query;
+
+    $expect = {
+        'rank' => 'O[High^Low]',
+    };
+
+    is_deeply($rank_query, $expect, "Formatted rank query successfully");
+
+
+    # Testing multiple ranks: High, Low
+    $data = Alchemy::DataNews->new(
+        api_key => 'TEST',
+        rank    => ['High', 'Unknown']
+    );
+
+    $rank_query = $data->_format_rank_query;
+
+    $expect = {
+        'rank' => 'O[High^Unknown]',
+    };
+
+    is_deeply($rank_query, $expect, "Formatted rank query successfully");
+
+
+    # Testing multiple ranks: Medium, Low
+    $data = Alchemy::DataNews->new(
+        api_key => 'TEST',
+        rank    => ['Medium', 'Low']
+    );
+
+    $rank_query = $data->_format_rank_query;
+
+    $expect = {
+        'rank' => 'O[Medium^Low]',
+    };
+
+    is_deeply($rank_query, $expect, "Formatted rank query successfully");
+
+
+    # Testing multiple ranks: Low, Medium
+    $data = Alchemy::DataNews->new(
+        api_key => 'TEST',
+        rank    => ['Low', 'Medium']
+    );
+
+    $rank_query = $data->_format_rank_query;
+
+    $expect = {
+        'rank' => 'O[Low^Medium]',
+    };
+
+    is_deeply($rank_query, $expect, "Formatted rank query successfully");
+
+
+    # Testing one value for HashRef: High
+    $data = Alchemy::DataNews->new(
+        api_key => 'TEST',
+        rank    => { value => 'High' },
+    );
+
+    $rank_query = $data->_format_rank_query;
+
+    $expect = {
+        'rank' => 'High',
+    };
+
+    is_deeply($rank_query, $expect, "Formatted rank query successfully");
+
+
+    # Testing one value for HashRef: Medium
+    $data = Alchemy::DataNews->new(
+        api_key => 'TEST',
+        rank    => { value => 'Medium' },
+    );
+
+    $rank_query = $data->_format_rank_query;
+
+    $expect = {
+        'rank' => 'Medium',
+    };
+
+    is_deeply($rank_query, $expect, "Formatted rank query successfully");
+
+
+    # Testing one value for HashRef: Low
+    $data = Alchemy::DataNews->new(
+        api_key => 'TEST',
+        rank    => { value => 'Low' },
+    );
+
+    $rank_query = $data->_format_rank_query;
+
+    $expect = {
+        'rank' => 'Low',
+    };
+
+    is_deeply($rank_query, $expect, "Formatted rank query successfully");
+
+
+    # Testing one value for HashRef: Unknown
+    $data = Alchemy::DataNews->new(
+        api_key => 'TEST',
+        rank    => { value => 'Unknown' },
+    );
+
+    $rank_query = $data->_format_rank_query;
+
+    $expect = {
+        'rank' => 'Unknown',
+    };
+
+    is_deeply($rank_query, $expect, "Formatted rank query successfully");
+
+
+    # Testing two values for HashRef: High, Medium
+    $data = Alchemy::DataNews->new(
+        api_key => 'TEST',
+        rank    => { value => ['High', 'Medium'] },
+    );
+
+    $rank_query = $data->_format_rank_query;
+
+    $expect = {
+        'rank' => 'O[High^Medium]',
+    };
+
+    is_deeply($rank_query, $expect, "Formatted rank query successfully");
+};
+
 subtest 'Complex queries' => sub {
+    # Testing one text keyword, and multiple sentiment types
     $data = Alchemy::DataNews->new(
         api_key => 'TEST',
         sentiment => {
@@ -805,6 +1186,7 @@ subtest 'Complex queries' => sub {
     is_deeply($queries, $expect, "Formatted keywords and sentiment correctly"); 
 
 
+    # Testing one text keyword, one title keyword, and multiple sentiment types
     $data = Alchemy::DataNews->new(
         api_key => 'TEST',
         sentiment => {
@@ -835,6 +1217,7 @@ subtest 'Complex queries' => sub {
     is_deeply($queries, $expect, "Formatted sentiment and keywords ArrayRef successfully");
 
 
+    # Testing mutiple text keywords, one title keyword, and multiple sentiment types
     $data = Alchemy::DataNews->new(
         api_key => 'TEST',
         sentiment => {
@@ -865,6 +1248,7 @@ subtest 'Complex queries' => sub {
     is_deeply($queries, $expect, "Formatted sentiment and keywords ArrayRef with nested text ArrayRef");
 
 
+    # Testing mutiple title keywords, one text keyword, and multiple sentiment types
     $data = Alchemy::DataNews->new(
         api_key => 'TEST',
         sentiment => {
@@ -895,6 +1279,7 @@ subtest 'Complex queries' => sub {
     is_deeply($queries, $expect, "Formatted sentiment and keywords ArrayRef with nested title ArrayRef");
 
 
+    # Testing multiple text and title keywords, multiple sentiment types
     $data = Alchemy::DataNews->new(
         api_key => 'TEST',
         sentiment => {
@@ -925,6 +1310,7 @@ subtest 'Complex queries' => sub {
     is_deeply($queries, $expect, "Formatted sentiment and keywords ArrayRef with nested title and text ArrayRef");
 
 
+    # Custom AND join on title keyword with multiple sentiment types
     $data = Alchemy::DataNews->new(
         api_key => 'TEST',
         sentiment => {
@@ -956,6 +1342,7 @@ subtest 'Complex queries' => sub {
     is_deeply($queries, $expect, "Formatted sentiment and keywords ArrayRef with nested title and text ArrayRef with AND");
 
 
+    # Custom AND join on title keyword with multiple sentiment types
     $data = Alchemy::DataNews->new(
         api_key => 'TEST',
         sentiment => {
@@ -987,6 +1374,7 @@ subtest 'Complex queries' => sub {
     is_deeply($queries, $expect, "Formatted sentiment and keywords ArrayRef with nested title and text ArrayRef with AND");
 
 
+    # Custom AND join on both title and text keyword with multiple sentiment types
     $data = Alchemy::DataNews->new(
         api_key => 'TEST',
         sentiment => {
@@ -1032,10 +1420,47 @@ subtest '_error' => sub {
 
         is scalar(@warnings), 1, 'Just one warning';
         like $warnings[0], qr{test warn}, 'Warned ok';
+
+        # Don't rely on array order, just get rid of the old warning
+        shift @warnings;
+
+        # Unsupported custom AND join
+        $data = Alchemy::DataNews->new(
+            api_key => 'TEST',
+            rank    => {
+                value => ['High', 'Medium'],
+                join  => 'AND',
+            },
+        );
+
+        my $rank_query = $data->_format_rank_query;
+
+        is scalar(@warnings), 1, 'Just one warning';
+
+        # Without fatal set, this should default to OR
+        like $warnings[0], qr{Custom AND joins are not supported in rank query! Defaulting to OR}, 'Warned ok';
+
+        my $expect = {
+            'rank' => 'O[High^Medium]',
+        };
+
+        is_deeply($rank_query, $expect, "Formatted rank query successfully");
     }
 
     $data->{_fatal} = 1;
+
     dies_ok { $data->_error('die') }, 'Died ok';
+
+    $data = Alchemy::DataNews->new(
+        api_key => 'TEST',
+        rank    => {
+            value => ['High', 'Medium'],
+            join  => 'AND',
+        },
+        fatal => 1,
+    );
+
+    dies_ok { $data->_format_rank_query }, "Invalid custom AND join killed rank query ok";
 };
 
 done_testing();

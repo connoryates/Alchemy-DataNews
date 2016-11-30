@@ -43,7 +43,7 @@ sub new {
         _entity          => $data{entity}          || undef,
         _relations       => $data{relations}       || undef,
         _sentiment       => $data{sentiment}       || undef,
-        _rank            => $data{rank}            || undef,
+        _concept         => $data{concept}         || undef,
         _join            => $data{join}            || undef,
         _next            => $data{next}            || undef,   # Allow user to override next and last query if necessary
         _last_query      => $data{last_query}      || undef,
@@ -133,10 +133,11 @@ sub _format_queries {
     my @query_types = qw(
         _keywords
         _taxonomy
-        _concepts
+        _concept
         _entity
         _relations
         _sentiment
+        _rank
     );
 
     my %query_form = %$query_form;
@@ -301,6 +302,11 @@ sub _format_taxonomy_query {
 
     my $taxonomy = $self->{_taxonomy};
 
+    if (not defined $taxonomy) {
+        $self->_error("Missing required param : taxonomy");
+        return undef;
+    }
+
     my $params       = {};
     my $query_string = 'q.enriched.url.enrichedTitle.taxonomy.taxonomy_.label';
 
@@ -318,22 +324,40 @@ sub _format_taxonomy_query {
     return $params;
 }
 
-sub _format_concepts_query {
+sub _format_concept_query {
     my $self = shift;
 
-    my $concepts = $self->{_concepts};
+    my $concept = $self->{_concept};
+
+    if (not defined $concept) {
+        $self->_error("Missing required param : concept");
+        return undef;
+    }
 
     my $params       = {};
     my $query_string = 'q.enriched.url.concepts.concept.text';
 
     my $prefix = $self->__get_prefix;
 
-    if (ref($concepts) and ref($concepts) eq 'ARRAY') {
-        my $search_string = join '^', @{ $concepts };
+    if (ref($concept) and ref($concept) eq 'ARRAY') {
+        my $search_string = join '^', @{ $concept };
         $params->{$query_string} = $prefix . '[' . $search_string . ']';
     }
+    elsif (ref($concept) and ref($concept) eq 'HASH') {
+        $self->{_join} = $concept->{join} if defined $concept->{join};
+        $prefix = $self->__get_prefix;
+
+        if (ref($concept->{value}) and ref($concept->{value}) eq 'ARRAY') {
+            my $search_string = join '^', @{ $concept->{value} };
+
+            $params->{$query_string} = $prefix . '[' . $search_string . ']';
+        }
+        else {
+            $params->{$query_string} = $concept->{value};
+        }
+    }
     else {
-        $params->{$query_string} = $prefix . '[' . $concepts . ']';
+        $params->{$query_string} = $concept;
     }
 
     return $params;
@@ -538,6 +562,60 @@ sub _format_sentiment_query {
     else {
         $self->_error("Unsupported data structure in sentiment value, cannot build sentiment query");
         return undef;
+    }
+
+    return $params;
+}
+
+sub _format_rank_query {
+    my $self = shift;
+    my $rank = $self->{_rank};
+
+    if (not defined $rank) {
+        $self->_error("Missing required param : rank");
+        return undef;
+    }
+
+    my $params = {};
+    my $query_string = 'rank';
+
+    my $rank_regex = qr/^\bHigh\b$|^\bMedium\b$|^\bLow\b$|^\bUnknown\b$/;
+
+    if (ref($rank) and ref($rank) eq 'ARRAY') {
+        my $prefix = $self->__get_prefix;
+
+        if (grep { !/$rank_regex/ } @$rank) {
+            $self->_error("Invalid rank");
+            return undef;
+        }
+
+        my $search_string = join '^', @$rank;
+
+        $params->{$query_string} = $prefix . '[' . $search_string . ']';
+    }
+    elsif (ref($rank) and ref($rank) eq 'HASH') {
+        if (ref($rank->{value}) and ref($rank->{value}) eq 'ARRAY') {
+                    
+            $self->_error("Custom AND joins are not supported in rank query! Defaulting to OR")
+              if defined $rank->{join};
+
+            my $prefix = 'O';
+
+            if (grep { !/$rank_regex/ } @{ $rank->{value} }) {
+                $self->_error("Invalid rank");
+                return undef;
+            }
+
+            my $search_string = join '^', @{ $rank->{value} };
+
+            $params->{$query_string} = $prefix . '[' . $search_string . ']';
+        }
+        else {
+            $params->{$query_string} = $rank->{value};
+        }
+    }
+    else {
+        $params->{$query_string} = $rank;
     }
 
     return $params;
@@ -958,7 +1036,7 @@ If you want to iterate through all pages, you can use next with a while loop:
 
 =head1 AUTHOR
 
-Connor Yates E<lt>connor.t.yates@gmail.comE<gt>
+Connor Yates E<lt>cyates@cpan.orgE<gt>
 
 =head1 COPYRIGHT
 

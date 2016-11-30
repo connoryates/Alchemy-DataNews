@@ -459,6 +459,44 @@ my $alchemy = Alchemy::DataNews->new(
 );
 ```
 
+For ```entity```, ```concept```,  and ```taxonomy``` queries, you may use custom ```AND``` joins with the similiar HashRef syntax as above.
+
+```perl
+
+$query_type => {
+    value => [$value_1, $value_2],
+    join  => 'AND',
+},
+
+```
+
+In fact, if you prefer the HashRef syntax, you maybe use it without the ```join``` and it will function like you expect. This is perfectly valid:
+
+```perl
+
+my $alchemy = Alchemy::DataNews->new(
+    api_key => $API_KEY,
+    timeframe => {
+        start => {
+            date          => 'now',
+            amount_before => '2',
+            unit          => 'days'
+        },
+        end => 'now',
+    },
+    relations => {
+        entity => {
+            value => 'Company',
+        },
+        action => {
+            value => 'purchased',
+        },
+    },
+
+);
+```
+
+
 ```fatal``` - If a bad query parameter is passed in during construction or method call, the module will refuse
 to format the query and issue a warning. This means the query will still get run, just without the bad parameter.
 
@@ -498,7 +536,7 @@ $alchemy->search_news({
 
 The keys "header" and "content" will not be recognized by the method, but will still run the query with the parameters it was able to build.
 
-```fatal``` overrides this behaivor to ```die``` instead.
+```fatal``` - overrides this behaivor to ```die``` instead.
 
 ```dedup``` - ```0/1``` or ```true/false```. Removes duplicate articles from the search query.
 
@@ -507,6 +545,43 @@ The keys "header" and "content" will not be recognized by the method, but will s
 Both ```dedup``` and ```dedup_threshold``` default to ```undef```
 
 Read more: https://alchemyapi.readme.io/docs/deduplication
+
+```rank``` - Watson's algorithm will also rank news articles as ```Unknown```, ```Low```, ```Medium```, or ```High```. You can specify ```rank``` to filter your results:
+
+```perl
+$alchemy->search_news({
+    timeframe => {
+        start => {
+            date          => 'now',
+            amount_before => '2',
+            unit          => 'days'
+        },
+        end  => 'now',
+    }
+    keywords => [
+        {
+            title  => ['Net Neutrality', 'Congress']    # Default to 'OR'
+        },
+        {
+            text => ['FCC', 'merger', 'Time Warner Cable', 'Google'],
+            join    => 'AND'
+        },
+    ],
+    rank => 'High',
+});
+```
+
+You can also pass an ```ArrayRef``` as the value to rank, which will automatically join the values into an ```OR``` query.
+
+Since an article cannot have more than one rank, you cannot specify custom ```AND``` joins to rank queries.
+
+However, the ```HashRef``` syntax is still acceptable:
+
+```perl
+rank => { value => 'High' },
+```
+
+Read more: https://alchemyapi.readme.io/docs/rank-based-search
 
 # INSTANCE METHODS
 
