@@ -48,6 +48,8 @@ sub new {
         _next            => $data{next}            || undef,   # Allow user to override next and last query if necessary
         _last_query      => $data{last_query}      || undef,
         _fatal           => $data{fatal}           || undef,
+        _raw_output      => $data{raw_output}      || 0,
+        _output          => $data{output}          || 'json',
     }, $class;
 
     return $self;
@@ -105,7 +107,13 @@ sub _fetch_query {
     my $content;
     try {
         my $resp = Furl->new->get($query);
-        $content = decode_json($resp->content);
+
+        if (defined $self->{_raw_output}) {
+            $content = $resp->content;
+        }
+        else {
+            $content = decode_json($resp->content);
+        }
     } catch {
         confess "Failed to get News Alert!\nReason : $_";
     };
@@ -153,7 +161,7 @@ sub _search_news {
 
     $params->{api_key}        = $self->{_api_key};
     $params->{count}          = $self->{_count};
-    $params->{outputMode}     = 'json';
+    $params->{outputMode}     = $self->{_output};
     $params->{return}         = $self->_format_return_fields($self->{_return_fields});
     $params->{dedup}          = $self->{_dedup};
     $params->{next}           = $self->{_next_page};

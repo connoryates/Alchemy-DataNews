@@ -500,6 +500,14 @@ The keys "header" and "content" will not be recognized by the method, but will s
 
 ```fatal``` overrides this behaivor to ```die``` instead.
 
+```dedup``` - ```0/1``` or ```true/false```. Removes duplicate articles from the search query.
+
+```dedup_threshold``` - Between ```0``` and ```1``` adjust the dedup algorithm to determine how strictly a duplicate is defined
+
+Both ```dedup``` and ```dedup_threshold``` default to ```undef```
+
+Read more: https://alchemyapi.readme.io/docs/deduplication
+
 # INSTANCE METHODS
 
 ```search_news``` - formats and sends the REST request to Watson. By default, this method will request JSON from Watson and decode the returned JSON structure
