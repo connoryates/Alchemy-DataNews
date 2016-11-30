@@ -48,7 +48,7 @@ sub new {
         _next            => $data{next}            || undef,   # Allow user to override next and last query if necessary
         _last_query      => $data{last_query}      || undef,
         _fatal           => $data{fatal}           || undef,
-        _raw_output      => $data{raw_output}      || 0,
+        _raw_output      => $data{raw_output}      || undef,
         _output          => $data{output}          || 'json',
     }, $class;
 
@@ -58,8 +58,9 @@ sub new {
 sub search_news {
     my ($self, $info) = @_;
 
-    confess "Missing required arg : info" unless defined $info;
-    confess "Arg info must be a HashRef"  unless ref($info) eq 'HASH';
+    if (defined $info) {
+        confess "Arg info must be a HashRef"  unless ref($info) eq 'HASH';
+    }
 
     # Allow the user to specify query methods on construction
     # or on method call
@@ -108,7 +109,7 @@ sub _fetch_query {
     try {
         my $resp = Furl->new->get($query);
 
-        if (defined $self->{_raw_output}) {
+        if ($self->{_raw_output}) {
             $content = $resp->content;
         }
         else {

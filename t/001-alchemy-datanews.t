@@ -14,7 +14,7 @@ my $data = Alchemy::DataNews->new(
 isa_ok($data, 'Alchemy::DataNews');
 
 subtest 'Checking methods' => sub {
-    my @methods = qw(search_news);
+    my @methods = qw(search_news next);
 
     can_ok($data, @methods);
 };
@@ -23,13 +23,13 @@ subtest 'Test search_news' => sub {
     plan skip_all => 'Skipping author tests' unless $ENV{AUTHOR_TESTS};
 
     my $result = $data->search_news({
-#        sentiment => {
-#            score => {
-#                value    => '0.5',
-#                operator => '=>',
-#            },
-#            type => 'positive',
-#        },
+        sentiment => {
+            score => {
+                value    => '0.5',
+                operator => '=>',
+            },
+            type => 'positive',
+        },
         relations => {
             entity => 'Company',
             action => 'acquire',
@@ -85,6 +85,27 @@ subtest 'Test next' => sub {
     is(defined $next_result, 1, "Got a result back from request");
 
     print Dumper $next_result;
+};
+
+subtest 'Test raw output' => sub {
+    plan skip_all => 'Skipping author tests' unless $ENV{AUTHOR_TESTS};
+
+    $data = Alchemy::DataNews->new(
+        api_key   => 'TEST',
+        timeframe => {
+           start => {
+                date          => 'now',
+                amount_before => '2',
+                unit          => 'days'
+            },
+            end => 'now',
+        },
+        raw_output => 1,
+    );
+
+    my $result = $data->search_news;
+
+    is(defined $result, 1, 'Got a scalar back from JSON raw output');
 };
 
 subtest 'Format date query' => sub {
