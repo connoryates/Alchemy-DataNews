@@ -244,6 +244,9 @@ sub _format_keywords_query {
                     else {
                         if ($type eq 'title') {
                             $query_string = 'q.enriched.url.title';
+
+                            $value = $self->__restrict_query($value);
+
                             $params->{$query_string} = $value;
                         }
                         elsif ($type eq 'text') {
@@ -284,6 +287,9 @@ sub _format_keywords_query {
             }
             else {
                 $query_string = 'q.enriched.url.text';
+
+                $value = $self->__restrict_query($value);
+
                 $params->{$query_string} = $value;
             }
 
@@ -291,6 +297,9 @@ sub _format_keywords_query {
     }
     else {
         my $query_string = 'q.enriched.url.text';
+
+        $keywords = $self->__restrict_query($keywords);
+
         $params->{$query_string} = $keywords;
     }
 
@@ -309,6 +318,7 @@ sub _format_taxonomy_query {
 
     my $params       = {};
     my $query_string = 'q.enriched.url.enrichedTitle.taxonomy.taxonomy_.label';
+    my $conf_query   = 'q.enriched.url.taxonomy.taxonomy_.score';
 
     if (ref($taxonomy) and ref($taxonomy) eq 'ARRAY') {
         my $search_string = join '^', @{ $taxonomy };
@@ -317,7 +327,57 @@ sub _format_taxonomy_query {
 
         $params->{$query_string} = $prefix . '[' . $search_string . ']';
     }
+    elsif (ref($taxonomy) and ref($taxonomy) eq 'HASH') {
+        if (defined $taxonomy->{value} and ref($taxonomy->{value}) and ref($taxonomy->{value}) eq 'ARRAY') {
+            my $search_string = join '^', @{ $taxonomy->{value} };
+
+            $self->{_join} = $taxonomy->{join} if defined $taxonomy->{join};
+
+            my $prefix = $self->__get_prefix;
+
+            if (defined $taxonomy->{confidence}) {
+                my $operator   = $taxonomy->{operator} || '';
+
+                if (defined $operator and $operator =~ /\S+/) {
+                    $operator = '=>' if $operator eq '>=';
+
+                    unless ($operator =~ /(?:<|<=|=>|=|>)/) {
+                        $self->_error("Invalid operator, cannot format taxonomy query");
+                        return undef;
+                    }
+                }
+
+                $params->{$conf_query} = $operator . $taxonomy->{confidence};
+            }
+
+            $params->{$query_string} = $prefix . '[' . $search_string . ']';
+        }
+        elsif (defined $taxonomy->{value} and !ref($taxonomy->{value})) {
+            my $value  = $self->__restrict_query($taxonomy->{value});
+            $params->{$query_string} = $value;
+
+            if (defined $taxonomy->{confidence}) {
+                my $operator = $taxonomy->{operator} || '';
+
+                if (defined $operator and $operator =~ /\S+/) {
+                    $operator = '=>' if $operator eq '>=';
+
+                    unless ($operator =~ /(?:<|<=|=>|=|>)/) {
+                        $self->_error("Invalid operator, cannot format taxonomy query");
+                        return undef;
+                    }
+                }
+
+                $params->{$conf_query} = $operator . $taxonomy->{confidence};
+            }
+        }
+        else {
+            $self->_error("Unsupported data type in taxonomy query. Cannot build query");
+            return undef;
+        }
+    }
     else {
+        $taxonomy = $self->__restrict_query($taxonomy);
         $params->{$query_string} = $taxonomy 
     }
 
@@ -673,6 +733,22 @@ sub __get_prefix {
     $prefix = uc($prefix);
 
     return $prefix;
+}
+
+sub __restrict_query {
+    my ($self, $value) = @_;
+
+    if (not defined $value) {
+        $self->_error("Missing required param : value");
+        return undef;
+    }
+
+    if ($value =~ /^\!/) {
+        $value =~ s{^\!}{};
+        $value = '-[' . $value . ']';
+    }
+
+    return $value;
 }
 
 1;

@@ -249,7 +249,7 @@ subtest 'Format keywords query' => sub {
     is_deeply($expect, $keywords_query, "Formatted keywords query successfully");
 
 
-    # Testing unspecified ArrayRef keyword - should default to text
+    # Testing unspecified ArrayRef keyword - should default to text and OR
     $data = Alchemy::DataNews->new(
         api_key  => 'TEST',
         keywords => [ 'Obama', 'Trump'],
@@ -272,6 +272,21 @@ subtest 'Format keywords query' => sub {
 
     $expect = {
         'q.enriched.url.text'  => 'Obama'
+    };
+
+    $keywords_query = $data->_format_keywords_query;
+
+    is_deeply($expect, $keywords_query, "Formatted keywords query successfully");
+
+
+    # Testing unspecified restricted value keyword - should default to text
+    $data = Alchemy::DataNews->new(
+        api_key  => 'TEST',
+        keywords => '!Obama',
+    );
+
+    $expect = {
+        'q.enriched.url.text'  => '-[Obama]'
     };
 
     $keywords_query = $data->_format_keywords_query;
@@ -321,6 +336,382 @@ subtest 'Format taxonomy query' => sub {
 
     $expect = {
         'q.enriched.url.enrichedTitle.taxonomy.taxonomy_.label' => 'Movies'
+    };
+
+    is_deeply($txn_query, $expect, "Formatted taxonomy query successfully");
+
+
+    # Testing taxonomy HashRef single value
+    $data = Alchemy::DataNews->new(
+        api_key  => 'TEST',
+        taxonomy => {
+            value => 'Movies',
+        },
+    );
+
+    $txn_query = $data->_format_taxonomy_query;
+
+    $expect = {
+        'q.enriched.url.enrichedTitle.taxonomy.taxonomy_.label' => 'Movies'
+    };
+
+    is_deeply($txn_query, $expect, "Formatted taxonomy query successfully");
+
+    # Testing taxonomy HashRef with mutiple values
+    $data = Alchemy::DataNews->new(
+        api_key   => 'TEST',
+        taxonomy  => {
+            value => ['Movies', 'Cars'],
+        }
+    );
+
+    $txn_query = $data->_format_taxonomy_query;
+
+    $expect = {
+        'q.enriched.url.enrichedTitle.taxonomy.taxonomy_.label' => 'O[Movies^Cars]'
+    };
+
+    is_deeply($txn_query, $expect, "Formatted taxonomy query successfully");
+
+
+    # Testing taxonomy HashRef with mutiple values and nested custom AND join
+    $data = Alchemy::DataNews->new(
+        api_key   => 'TEST',
+        taxonomy  => {
+            value => ['Movies', 'Cars'],
+            join  => 'AND',
+        }
+    );
+
+    $txn_query = $data->_format_taxonomy_query;
+
+    $expect = {
+        'q.enriched.url.enrichedTitle.taxonomy.taxonomy_.label' => 'A[Movies^Cars]'
+    };
+
+    is_deeply($txn_query, $expect, "Formatted taxonomy query successfully");
+
+
+    # Testing taxonomy HashRef with one value and confidence score and no operator
+    $data = Alchemy::DataNews->new(
+        api_key   => 'TEST',
+        taxonomy  => {
+            value      => 'Movies',
+            confidence => 0.9,
+        }
+    );
+
+    $txn_query = $data->_format_taxonomy_query;
+
+    $expect = {
+          'q.enriched.url.enrichedTitle.taxonomy.taxonomy_.label' => 'Movies',
+          'q.enriched.url.taxonomy.taxonomy_.score' => '0.9'
+    };
+
+    is_deeply($txn_query, $expect, "Formatted taxonomy query successfully");
+
+
+    # Testing taxonomy HashRef with one value and confidence score and >
+    $data = Alchemy::DataNews->new(
+        api_key   => 'TEST',
+        taxonomy  => {
+            value      => 'Movies',
+            confidence => 0.9,
+            operator   => '>',
+        }
+    );
+
+    $txn_query = $data->_format_taxonomy_query;
+
+    $expect = {
+          'q.enriched.url.enrichedTitle.taxonomy.taxonomy_.label' => 'Movies',
+          'q.enriched.url.taxonomy.taxonomy_.score' => '>0.9'
+    };
+
+    is_deeply($txn_query, $expect, "Formatted taxonomy query successfully");
+
+
+    # Testing taxonomy HashRef with multiple values and confidence score and >
+    $data = Alchemy::DataNews->new(
+        api_key   => 'TEST',
+        taxonomy  => {
+            value      => ['Movies', 'Politics'],
+            confidence => 0.9,
+            operator   => '>',
+        }
+    );
+
+    $txn_query = $data->_format_taxonomy_query;
+
+    $expect = {
+          'q.enriched.url.enrichedTitle.taxonomy.taxonomy_.label' => 'O[Movies^Politics]',
+          'q.enriched.url.taxonomy.taxonomy_.score' => '>0.9'
+    };
+
+    is_deeply($txn_query, $expect, "Formatted taxonomy query successfully");
+
+
+    # Testing taxonomy HashRef with multiple values and confidence score and >
+    $data = Alchemy::DataNews->new(
+        api_key   => 'TEST',
+        taxonomy  => {
+            value      => ['Movies', 'Politics'],
+            confidence => 0.9,
+            operator   => '>',
+            join       => 'AND',
+        }
+    );
+
+    $txn_query = $data->_format_taxonomy_query;
+
+    $expect = {
+          'q.enriched.url.enrichedTitle.taxonomy.taxonomy_.label' => 'A[Movies^Politics]',
+          'q.enriched.url.taxonomy.taxonomy_.score' => '>0.9'
+    };
+
+    is_deeply($txn_query, $expect, "Formatted taxonomy query successfully");
+
+
+    # Testing taxonomy HashRef with one value and confidence score and <
+    $data = Alchemy::DataNews->new(
+        api_key   => 'TEST',
+        taxonomy  => {
+            value      => 'Movies',
+            confidence => 0.9,
+            operator   => '<',
+        }
+    );
+
+    $txn_query = $data->_format_taxonomy_query;
+
+    $expect = {
+          'q.enriched.url.enrichedTitle.taxonomy.taxonomy_.label' => 'Movies',
+          'q.enriched.url.taxonomy.taxonomy_.score' => '<0.9'
+    };
+
+    is_deeply($txn_query, $expect, "Formatted taxonomy query successfully");
+
+
+    # Testing taxonomy HashRef with one value and confidence score and <
+    $data = Alchemy::DataNews->new(
+        api_key   => 'TEST',
+        taxonomy  => {
+            value      => ['Movies', 'Politics'],
+            confidence => 0.9,
+            operator   => '<',
+        }
+    );
+
+    $txn_query = $data->_format_taxonomy_query;
+
+    $expect = {
+          'q.enriched.url.enrichedTitle.taxonomy.taxonomy_.label' => 'O[Movies^Politics]',
+          'q.enriched.url.taxonomy.taxonomy_.score' => '<0.9'
+    };
+
+    is_deeply($txn_query, $expect, "Formatted taxonomy query successfully");
+
+
+    # Testing taxonomy HashRef with one value, custom AND join, confidence score and <
+    $data = Alchemy::DataNews->new(
+        api_key   => 'TEST',
+        taxonomy  => {
+            value      => ['Movies', 'Politics'],
+            confidence => 0.9,
+            operator   => '<',
+            join       => 'AND',
+        }
+    );
+
+    $txn_query = $data->_format_taxonomy_query;
+
+    $expect = {
+          'q.enriched.url.enrichedTitle.taxonomy.taxonomy_.label' => 'A[Movies^Politics]',
+          'q.enriched.url.taxonomy.taxonomy_.score' => '<0.9'
+    };
+
+    is_deeply($txn_query, $expect, "Formatted taxonomy query successfully");
+
+
+    # Testing taxonomy HashRef with one value, confidence score and >
+    $data = Alchemy::DataNews->new(
+        api_key   => 'TEST',
+        taxonomy  => {
+            value      => 'Movies',
+            confidence => 0.9,
+            operator   => '>',
+        }
+    );
+
+    $txn_query = $data->_format_taxonomy_query;
+
+    $expect = {
+          'q.enriched.url.enrichedTitle.taxonomy.taxonomy_.label' => 'Movies',
+          'q.enriched.url.taxonomy.taxonomy_.score' => '>0.9'
+    };
+
+    is_deeply($txn_query, $expect, "Formatted taxonomy query successfully");
+
+
+    # Testing taxonomy HashRef with multiple values, confidence score, and >
+    $data = Alchemy::DataNews->new(
+        api_key   => 'TEST',
+        taxonomy  => {
+            value      => ['Movies', 'Politics'],
+            confidence => 0.9,
+            operator   => '>',
+        }
+    );
+
+    $txn_query = $data->_format_taxonomy_query;
+
+    $expect = {
+          'q.enriched.url.enrichedTitle.taxonomy.taxonomy_.label' => 'O[Movies^Politics]',
+          'q.enriched.url.taxonomy.taxonomy_.score' => '>0.9'
+    };
+
+    is_deeply($txn_query, $expect, "Formatted taxonomy query successfully");
+
+
+    # Testing taxonomy HashRef with multiple values, custom AND join, confidence score, and >
+    $data = Alchemy::DataNews->new(
+        api_key   => 'TEST',
+        taxonomy  => {
+            value      => ['Movies', 'Politics'],
+            confidence => 0.9,
+            operator   => '>',
+            join       => 'AND',
+        }
+    );
+
+    $txn_query = $data->_format_taxonomy_query;
+
+    $expect = {
+          'q.enriched.url.enrichedTitle.taxonomy.taxonomy_.label' => 'A[Movies^Politics]',
+          'q.enriched.url.taxonomy.taxonomy_.score' => '>0.9'
+    };
+
+    is_deeply($txn_query, $expect, "Formatted taxonomy query successfully");
+
+
+
+    # Testing taxonomy HashRef with one value, confidence score and =>
+    $data = Alchemy::DataNews->new(
+        api_key   => 'TEST',
+        taxonomy  => {
+            value      => 'Movies',
+            confidence => 0.9,
+            operator   => '=>',
+        }
+    );
+
+    $txn_query = $data->_format_taxonomy_query;
+
+    $expect = {
+          'q.enriched.url.enrichedTitle.taxonomy.taxonomy_.label' => 'Movies',
+          'q.enriched.url.taxonomy.taxonomy_.score' => '=>0.9'
+    };
+
+    is_deeply($txn_query, $expect, "Formatted taxonomy query successfully");
+
+
+    # Testing taxonomy HashRef with multiple values, confidence score, and =>
+    $data = Alchemy::DataNews->new(
+        api_key   => 'TEST',
+        taxonomy  => {
+            value      => ['Movies', 'Politics'],
+            confidence => 0.9,
+            operator   => '=>',
+        }
+    );
+
+    $txn_query = $data->_format_taxonomy_query;
+
+    $expect = {
+          'q.enriched.url.enrichedTitle.taxonomy.taxonomy_.label' => 'O[Movies^Politics]',
+          'q.enriched.url.taxonomy.taxonomy_.score' => '=>0.9'
+    };
+
+    is_deeply($txn_query, $expect, "Formatted taxonomy query successfully");
+
+
+    # Testing taxonomy HashRef with multiple values, custom AND join, confidence score, and =>
+    $data = Alchemy::DataNews->new(
+        api_key   => 'TEST',
+        taxonomy  => {
+            value      => ['Movies', 'Politics'],
+            confidence => 0.9,
+            operator   => '=>',
+            join       => 'AND',
+        }
+    );
+
+    $txn_query = $data->_format_taxonomy_query;
+
+    $expect = {
+          'q.enriched.url.enrichedTitle.taxonomy.taxonomy_.label' => 'A[Movies^Politics]',
+          'q.enriched.url.taxonomy.taxonomy_.score' => '=>0.9'
+    };
+
+    is_deeply($txn_query, $expect, "Formatted taxonomy query successfully");
+
+
+    # Testing taxonomy HashRef with one value, confidence score and <=
+    $data = Alchemy::DataNews->new(
+        api_key   => 'TEST',
+        taxonomy  => {
+            value      => 'Movies',
+            confidence => 0.9,
+            operator   => '<=',
+        }
+    );
+
+    $txn_query = $data->_format_taxonomy_query;
+
+    $expect = {
+          'q.enriched.url.enrichedTitle.taxonomy.taxonomy_.label' => 'Movies',
+          'q.enriched.url.taxonomy.taxonomy_.score' => '<=0.9'
+    };
+
+    is_deeply($txn_query, $expect, "Formatted taxonomy query successfully");
+
+
+    # Testing taxonomy HashRef with multiple values, confidence score, and <=
+    $data = Alchemy::DataNews->new(
+        api_key   => 'TEST',
+        taxonomy  => {
+            value      => ['Movies', 'Politics'],
+            confidence => 0.9,
+            operator   => '<=',
+        }
+    );
+
+    $txn_query = $data->_format_taxonomy_query;
+
+    $expect = {
+          'q.enriched.url.enrichedTitle.taxonomy.taxonomy_.label' => 'O[Movies^Politics]',
+          'q.enriched.url.taxonomy.taxonomy_.score' => '<=0.9'
+    };
+
+    is_deeply($txn_query, $expect, "Formatted taxonomy query successfully");
+
+
+    # Testing taxonomy HashRef with multiple values, custom AND join, confidence score, and <=
+    $data = Alchemy::DataNews->new(
+        api_key   => 'TEST',
+        taxonomy  => {
+            value      => ['Movies', 'Politics'],
+            confidence => 0.9,
+            operator   => '<=',
+            join       => 'AND',
+        }
+    );
+
+    $txn_query = $data->_format_taxonomy_query;
+
+    $expect = {
+          'q.enriched.url.enrichedTitle.taxonomy.taxonomy_.label' => 'A[Movies^Politics]',
+          'q.enriched.url.taxonomy.taxonomy_.score' => '<=0.9'
     };
 
     is_deeply($txn_query, $expect, "Formatted taxonomy query successfully");
@@ -1405,6 +1796,23 @@ subtest 'Complex queries' => sub {
     };
 
     is_deeply($queries, $expect, "Formatted sentiment and keywords ArrayRef with nested title and text ArrayRef with AND");
+};
+
+subtest '__restrict_query' => sub {
+    $data = Alchemy::DataNews->new(
+        api_key => 'api_key',
+    );
+
+    my $restricted = $data->__restrict_query('!Obama');
+    my $expect     = '-[Obama]';
+
+    is ($restricted, $expect, "Got expected restructed query");
+
+    $restricted = $data->__restrict_query('Obama');
+    $expect     = 'Obama';
+
+    is ($restricted, $expect, "Got expected restructed query");
+
 };
 
 subtest '_error' => sub {
