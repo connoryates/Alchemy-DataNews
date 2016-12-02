@@ -699,6 +699,67 @@ Note that you cannot use ```next``` with no args if you return ```raw_output```.
 my $next_results = $alchemy->next(undef, $parsed_token);
 ```
 
+# RETURN FIELDS
+
+The API allows you to specify 400+ return fields. By default, the return fields are: ```enriched.url.url,enriched.url.title``` - or the url and the title of the article. The official list of return fields is documented here: https://docs.google.com/spreadsheets/d/1wN0e_fhYCO7GBAneN9xjrNo57OtS_0Tr8FI9xCMfmzM/edit#gid=0
+
+This module also has a Perl-syntax friendly mappings available. You can view them by dumping:
+
+```perl
+my $ret_fields = $alchemy->get_return_fields;
+print Dumper $ret_fields;
+```
+
+So ```return_fields``` can be specified as:
+
+```perl
+$alchemy->search_news({
+    timeframe => {
+        start => {
+            date          => 'now',
+            amount_before => '2',
+            unit          => 'days'
+        },
+        end => 'now',
+    }
+    keywords => [
+        {
+            title => ['Net Neutrality', 'Congress']
+        },
+        {
+            text  => ['FCC', 'merger', 'Time Warner Cable', 'Google'],
+            join => 'AND'
+        },
+    ],
+    return_fields => [qw(url keywords entities relations)],
+)};
+```
+
+or with the query syntax used by the API:
+
+```perl
+$alchemy->search_news({
+    timeframe => {
+        start => {
+            date          => 'now',
+            amount_before => '2',
+            unit          => 'days'
+        },
+        end => 'now',
+    }
+    keywords => [
+        {
+            title => ['Net Neutrality', 'Congress']
+        },
+        {
+            text  => ['FCC', 'merger', 'Time Warner Cable', 'Google'],
+            join => 'AND'
+        },
+    ],
+    return_fields => [qw(enriched.url.enrichedTitle.taxonomy enriched.url.enrichedTitle.docSentiment.score)],
+)};
+```
+
 # AUTHOR
 
 Connor Yates
