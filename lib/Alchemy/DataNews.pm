@@ -22,6 +22,152 @@ our %UNIT_MAP = (
     years   => 'y',
 );
 
+our %RETURN_FIELDS = (
+    'orig_url'                   => 'original.url',                                                 # Text
+    'image'                      => 'enriched.url.image',                                           # Text
+    'image_keywords'             => 'enriched.url.imageKeywords',                                   # Array
+    'image_keyword_text'         => 'enriched.url.imageKeyword.text',                               # Text
+    'image_keyword_score'        => 'enriched.url.imageKeyword.score',                              # Float
+    'feeds'                      => 'enriched.url.feeds',                                           # Array
+    'feed'                       => 'enriched.url.feeds.feed.feed',                                 # Text
+    'url'                        => 'enriched.url.url',                                             # Text
+    'title'                      => 'enriched.url.title',                                           # Text
+    'cleaned_title'              => 'enriched.url.cleanedTitle',                                    # Text
+    'lanuage'                    => 'enriched.url.lanuage',                                         # Text
+    'publication_date'           => 'enriched.url.publicationDate.date',                            # Text
+    'publication_date_confident' => 'enriched.url.publicationDate.confident',                       # Text
+    'text'                       => 'enriched.url.text',                                            # Text
+    'author'                     => 'enriched.url.author',                                          # Text
+    'keywords'                   => 'enriched.url.keywords',                                        # Array
+    'keyword_text'               => 'enriched.url.keywords.keyword.text',                           # Text
+    'keyword_relevance'          => 'enriched.url.keywords.keyword.relevance',                      # Float
+    'sentiment_type'             => 'enriched.url.keywords.keyword.sentiment.type',                 # Text
+    'sentiment_score'            => 'enriched.url.keywords.keyword.sentiment.score',                # Float
+    'sentiment_mixed'            => 'enriched.url.keywords.keyword.sentiment.mixed',                # Unsigned Int
+    'keyword_hierarchy'          => 'enriched.url.keywords.keyword.knowledgeGraph.typeHierarchy',   # Text
+    'entities'                   => 'enriched.url.entities',                                        # Array
+    'entity_text'                => 'enriched.url.entities.entity.text',                            # Text
+    'entity_type'                => 'enriched.url.entities.entity.type',                            # Text
+    'entity_hierarchy'           => 'enriched.url.entities.entity.knowledgeGraph.typeHierarchy',    # Text
+    'entity_count'               => 'enriched.url.entities.entity.count',                           # Unsigned Int
+    'entity_relevance'           => 'enriched.url.entities.entity.relevance',                       # Float
+    'entity_sentiment_type'      => 'enriched.url.entities.entity.sentiment.type',                  # Text
+    'entity_sentiment_score'     => 'enriched.url.entities.entity.sentiment.score',                 # Float
+    'entity_sentiment_mixed'     => 'enriched.url.entities.entity.sentiment.mixed',                 # Unsigned Int
+    'entity_disambig_name'       => 'enriched.url.entities.entity.disambiguated.name',              # Text
+    'entity_disambig_geo'        => 'enriched.url.entities.entity.disambiguated.geo',               # Text
+    'entity_disambig_dbpedia'    => 'enriched.url.entities.entity.disambiguated.dbpedia',           # Text
+    'entity_disambig_website'    => 'enriched.url.entities.entity.disambiguated.website',           # Text
+    'entity_disambig_subtypes'   => 'enriched.url.entities.entity.disambiguated.subType',           # Array
+    'entity_disambig_subtype'    => 'enriched.url.entities.entity.disambiguated.subType.subType_',  # Text 
+    'entity_quotations'          => 'enriched.url.entities.entity.quotations',                      # Array
+    'entity_quotation'           => 'enriched.url.entities.entity.quotations.quotation_.quotation', # Text
+    'entity_quotation_sentiment_type'  => 'enriched.url.entities.entity.quotations.quotation_.sentiment.type',  # Text
+    'entity_quotation_sentiment_score' => 'enriched.url.entities.entity.quotations.quotation_.sentiment.score', # Float
+    'entity_quotation_sentiment_mixed' => 'enriched.url.entities.entity.quotations.quotation_.sentiment.mixed', # Unsigned Int
+    'concepts'                     => 'enriched.url.concepts',                                        # Array
+    'concept_text'                 => 'enriched.url.concepts.concept.text',                           # Text
+    'concept_relevance'            => 'enriched.url.concepts.concept.relevance',                      # Float
+    'concept_hierarchy'            => 'enriched.url.concepts.concept.knowledgeGraph.typeHierarchy',   # Text
+    'relations'                    => 'enriched.url.relations',                                       # Array
+    'relation_sentence'            => 'enriched.url.relations.relation.sentence',                     # Text
+    'relation_subject_text'        => 'enriched.url.relations.relation.subject.text',                 # Text
+    'relation_subject_entities'    => 'enriched.url.relations.relation.subject.entities',             # Array
+    'relation_subject_entity_text' => 'enriched.url.relations.relation.subject.entities.entity.text', # Text
+    'relation_subject_entity_type' => 'enriched.url.relations.relation.subject.entities.entity.type', # Text
+    'relation_subject_entity_hierarchy'         => 'enriched.url.relations.relation.subject.entities.entity.knowledgeGraph.typeHierarchy',  # Text
+    'relation_subject_entity_count'             => 'enriched.url.relations.relation.subject.entities.entity.count',                  # Unsigned Int
+    'relation_subject_entity_relevance'         => 'enriched.url.relations.relation.subject.entities.entity.relevance',              # Float
+    'relation_subject_entity_sentiment_type'    => 'enriched.url.relations.relation.subject.entities.entity.sentiment.type',         # Text
+    'relation_subject_entity_sentiment_score'   => 'enriched.url.relations.relation.subject.entities.entity.sentiment.score',        # Float 
+    'relation_subject_entity_sentiment_mixed'   => 'enriched.url.relations.relation.subject.entities.entity.sentiment.mixed',        # Float 
+    'relation_subject_entity_disambig_name'     => 'enriched.url.relations.relation.subject.entities.entity.disambiguated.name',     # Text
+    'relation_subject_entity_disambig_geo'      => 'enriched.url.relations.relation.subject.entities.entity.disambiguated.geo',      # Text
+    'relation_subject_entity_disambig_dbpedia'  => 'enriched.url.relations.relation.subject.entities.entity.disambiguated.dbpedia',  # Text
+    'relation_subject_entity_disambig_website'  => 'enriched.url.relations.relation.subject.entities.entity.disambiguated.website',  # Text
+    'relation_subject_entity_disambig_subtypes' => 'enriched.url.relations.relation.subject.entities.entity.disambiguated.subTypes', # Array
+    'relation_subject_entity_quotations'                => 'enriched.url.relations.relation.subject.entities.entity.quotations',             # Array
+    'relation_subject_entity_quotation'                 => 'enriched.url.relations.relation.subject.entities.entity.quotation_.quotation',   # Array
+    'relation_subject_entity_quotation_sentiment_type'  => 'enriched.url.relations.relation.subject.entities.entity.quotations.quotation_.sentiment.type',  # Text
+    'relation_subject_entity_quotation_sentiment_score' => 'enriched.url.relations.relation.subject.entities.entity.quotations.quotation_.sentiment.score', # Float
+    'relation_subject_entity_quotation_sentiment_mixed' => 'enriched.url.relations.relation.subject.entities.entity.quotations.quotation_.sentiment.mixed', # Unsigned Int
+    'relation_subject_keywords'    => 'enriched.url.relations.relation.subject.keywords',                                                    # Array
+    'relation_subject_keyword'     => 'enriched.url.relations.relation.subject.keyword.text',                                                # Text
+    'relation_subject_keyword_sentiment_type'   => 'enriched.url.relations.relation.subject.keywords.keyword.sentiment.type',                # Text
+    'relation_subject_keyword_sentiment_score'  => 'enriched.url.relations.relation.subject.keywords.keyword.sentiment.score',               # Float 
+    'relation_subject_keyword_sentiment_mixed'  => 'enriched.url.relations.relation.subject.keywords.keyword.sentiment.mixed',               # Float 
+    'relation_subject_keyword_disambig_name'    => 'enriched.url.relations.relation.subject.keywords.keyword.disambiguated.name',            # Text
+    'relation_subject_keyword_hierarchy'        => 'enriched.url.relations.relation.subject.keywords.keyword.knowledgeGraph.typeHierarchy',  # Text
+    'relation_subject_sentiment_type'           => 'enriched.url.relations.relation.subject.sentiment.type',                                 # Text
+    'relation_subject_sentiment_score'          => 'enriched.url.relations.relation.subject.sentiment.score',                                # Float
+    'relation_subject_sentiment_mixed'          => 'enriched.url.relations.relation.subject.sentiment.mixed',                                # Unsigned Int
+    'relation_action_text'                      => 'enriched.url.relations.relation.action.text',                                            # Text
+    'relation_action_lemmatized'                => 'enriched.url.relations.relation.action.lemmatized',                                      # Text
+    'relation_action_verb_text'                 => 'enriched.url.relations.relation.action.verb.text',                                       # Text
+    'relation_action_verb_tense'                => 'enriched.url.relations.relation.action.verb.tense',                                      # Text
+    'relation_action_verb_negated'              => 'enriched.url.relations.relation.action.verb.negated',                                    # Text
+    'relation_object_text'                      => 'enriched.url.relations.relation.object.text',                                            # Text
+    'relation_object_entities'                  => 'enriched.url.relations.relation.object.entities',              # Array
+    'relation_object_entity_text'               => 'enriched.url.relations.relation.object.entities.entity.text',  # Text
+    'relation_object_entity_type'               => 'enriched.url.relations.relation.object.entities.entity.type',  # Text
+    'relation_object_entity_hierarchy'          => 'enriched.url.relations.relation.object.entities.entity.knowledgeGraph.typeHierarchy',  # Text
+    'relation_object_entity_count'              => 'enriched.url.relations.relation.object.entities.entity.count',                  # Unsigned Int
+    'relation_object_entity_relevance'          => 'enriched.url.relations.relation.object.entities.entity.relevance',              # Float
+    'relation_object_entity_sentiment_type'     => 'enriched.url.relations.relation.object.entities.entity.sentiment.type',         # Text
+    'relation_object_entity_sentiment_score'    => 'enriched.url.relations.relation.object.entities.entity.sentiment.score',        # Float 
+    'relation_object_entity_sentiment_mixed'    => 'enriched.url.relations.relation.object.entities.entity.sentiment.mixed',        # Float 
+    'relation_object_entity_disambig_name'      => 'enriched.url.relations.relation.object.entities.entity.disambiguated.name',     # Text
+    'relation_object_entity_disambig_geo'       => 'enriched.url.relations.relation.object.entities.entity.disambiguated.geo',      # Text
+    'relation_object_entity_disambig_dbpedia'   => 'enriched.url.relations.relation.object.entities.entity.disambiguated.dbpedia',  # Text
+    'relation_object_entity_disambig_website'   => 'enriched.url.relations.relation.object.entities.entity.disambiguated.website',  # Text
+    'relation_object_entity_disambig_subtypes'  => 'enriched.url.relations.relation.object.entities.entity.disambiguated.subTypes', # Array
+    'relation_object_entity_quotations'                => 'enriched.url.relations.relation.object.entities.entity.quotations',             # Array
+    'relation_object_entity_quotation'                 => 'enriched.url.relations.relation.object.entities.entity.quotation_.quotation',   # Array
+    'relation_object_entity_quotation_sentiment_type'  => 'enriched.url.relations.relation.object.entities.entity.quotations.quotation_.sentiment.type',  # Text
+    'relation_object_entity_quotation_sentiment_score' => 'enriched.url.relations.relation.object.entities.entity.quotations.quotation_.sentiment.score', # Float
+    'relation_object_entity_quotation_sentiment_mixed' => 'enriched.url.relations.relation.object.entities.entity.quotations.quotation_.sentiment.mixed', # Unsigned Int
+    'relation_object_keywords'                 => 'enriched.url.relations.relation.subject.keywords',                              # Array
+    'relation_oject_keyword'                   => 'enriched.url.relations.relation.subject.keyword.text',                          # Text
+    'relation_ojectt_keyword_sentiment_type'   => 'enriched.url.relations.relation.object.keywords.keyword.sentiment.type',        # Text
+    'relation_object_keyword_sentiment_score'  => 'enriched.url.relations.relation.object.keywords.keyword.sentiment.score',       # Float 
+    'relation_object_keyword_sentiment_mixed'  => 'enriched.url.relations.relation.object.keywords.keyword.sentiment.mixed',       # Float 
+    'relation_object_keyword_disambig_name'    => 'enriched.url.relations.relation.object.keywords.keyword.disambiguated.name',    # Text
+    'relation_object_keyword_hierarchy'        => 'enriched.url.relations.relation.subject.keywords.keyword.knowledgeGraph.typeHierarchy',  # Text
+    'relation_object_sentiment_type'           => 'enriched.url.relations.relation.object.sentiment.type',                         # Text
+    'relation_object_sentiment_score'          => 'enriched.url.relations.relation.object.sentiment.score',                        # Float
+    'relation_object_sentiment_mixed'          => 'enriched.url.relations.relation.object.sentiment.mixed',                        # Unsigned Int
+    'relation_object_sentiment_from_subject_type'     => 'enriched.url.relations.relation.object.sentimentFromSubject.type',       # Text
+    'relation_object_sentiment_from_subject_score'    => 'enriched.url.relations.relation.object.sentimentFromSubject.type',       # Float
+    'relation_object_sentiment_from_subject_mixed'    => 'enriched.url.relations.relation.object.sentimentFromSubject.type',       # Unsigned Int
+    'relation_object_location'                 => 'enriched.url.relations.relation.location.text',                                 # Text
+    'relation_object_location_sentiment_type'  => 'enriched.url.relations.relation.location.sentiment.type',                       # Text
+    'relation_object_location_sentiment_score' => 'enriched.url.relations.relation.location.sentiment.score',                      # Float
+    'relation_object_location_sentiment_mixed' => 'enriched.url.relations.relation.location.sentiment.mixed',                      # Text
+    'relation_location_entities'               => 'enriched.url.relations.relation.location.entities',                             # Array
+    'relation_location_entity'                 => 'enriched.url.relations.relation.location.entities.entity.text',                 # Text
+    'relation_location_entity_type'            => 'enriched.url.relations.relation.location.entities.entity.type',                 # Text
+    'relation_location_entity_hierarchy'       => 'enriched.url.relations.relation.location.entities.entity.knowledgeGraph.typeHierarchy',  # Text
+    'relation_location_entity_count'           => 'enriched.url.relations.relation.location.entities.entity.count',                # Unsigned Int
+    'relation_location_entity_relevance'       => 'enriched.url.relations.relation.location.entities.entity.relevance',            # Float
+    'relation_location_entity_sentiment_type'  => 'enriched.url.relations.relation.location.entities.entity.sentiment.type',       # Text
+    'relation_location_entity_sentiment_score' => 'enriched.url.relations.relation.location.entities.entity.sentiment.score',      # Float
+    'relation_location_entity_sentiment_mixed' => 'enriched.url.relations.relation.location.entities.entity.sentiment.mixed',      # Unsigned Int
+    'relation_location_entity_disambig_name'     => 'enriched.url.relations.relation.location.entities.entity.disambiguated.name',     # Text
+    'relation_location_entity_disambig_geo'      => 'enriched.url.relations.relation.location.entities.entity.disambiguated.geo',      # Text
+    'relation_location_entity_disambig_dbpedia'  => 'enriched.url.relations.relation.location.entities.entity.disambiguated.dbpedia',  # Text
+    'relation_location_entity_disambig_website'  => 'enriched.url.relations.relation.location.entities.entity.disambiguated.website',  # Text
+    'relation_location_entity_disambig_subtypes' => 'enriched.url.relations.relation.location.entities.entity.disambiguated.subTypes', # Array
+    'relation_location_entity_quotations'        => 'enriched.url.relations.relation.location.entities.entity.quotations',             # Array
+    'relation_location_entity_quotation'         => 'enriched.url.relations.relation.location.entities.entity.quotation_.quotation',   # Array
+    'relation_location_entity_quotation_sentiment_type'  => 'enriched.url.relations.relation.location.entities.entity.quotations.quotation_.sentiment.type',  # Text
+    'relation_location_entity_quotation_sentiment_score' => 'enriched.url.relations.relation.location.entities.entity.quotations.quotation_.sentiment.score', # Float
+    'relation_location_entity_quotation_sentiment_mixed' => 'enriched.url.relations.relation.location.entities.entity.quotations.quotation_.sentiment.mixed', # Unsigned Int
+    'relation_location_keywords'                 => 'enriched.url.relations.relation.location.keywords',
+    'relation_location_keyword'                  => 'enriched.url.relations.relation.location.keywords.keyword.text',
+    'relation_location_keyword_relevance'        => 'enriched.url.relations.relation.location.keywords.keyword.relevance',
+    # https://docs.google.com/spreadsheets/d/1wN0e_fhYCO7GBAneN9xjrNo57OtS_0Tr8FI9xCMfmzM/edit#gid=0
+);
+
 sub new {
     my ($class, %data) = @_;
 
@@ -336,7 +482,7 @@ sub _format_taxonomy_query {
             my $prefix = $self->__get_prefix;
 
             if (defined $taxonomy->{confidence}) {
-                my $operator   = $taxonomy->{operator} || '';
+                my $operator   = $taxonomy->{operator} || '=';
 
                 if (defined $operator and $operator =~ /\S+/) {
                     $operator = '=>' if $operator eq '>=';
@@ -357,7 +503,7 @@ sub _format_taxonomy_query {
             $params->{$query_string} = $value;
 
             if (defined $taxonomy->{confidence}) {
-                my $operator = $taxonomy->{operator} || '';
+                my $operator = $taxonomy->{operator} || '=';
 
                 if (defined $operator and $operator =~ /\S+/) {
                     $operator = '=>' if $operator eq '>=';
@@ -723,6 +869,12 @@ sub __get_prefix {
 
     $join ||= defined $self->{_join} ? $self->{_join} : 'OR';
 
+    my $restrict = undef;
+    if ($join =~ /^\!/) {
+        $restrict = 1;
+        $join =~ s{\!}{};
+    }
+
     unless ($join =~ /(?:^\bOR\b$|^\bAND\b$)/) {
         $self->_error("Unsupported join type $join");
         cluck "Defaulting to OR";
@@ -731,6 +883,8 @@ sub __get_prefix {
 
     my ($prefix) = split '', $join;
     $prefix = uc($prefix);
+
+    $prefix = '-' . $prefix if defined $restrict;
 
     return $prefix;
 }

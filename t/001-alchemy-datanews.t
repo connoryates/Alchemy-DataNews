@@ -36,7 +36,12 @@ subtest 'Test search_news' => sub {
 #        },
 #        entity => { company => 'Apple' },
 #        concept => ['Automotive Industry', 'Politics'],
-        taxonomy => ['Movies', 'Politics'],
+        taxonomy => {
+            value      => ['Movies', 'Politics'],
+            confidence => 0.7,
+#            operator   => '=>',
+            join       => 'AND',
+        },
 #        keywords => 'Obama',
 #        keywords => [
 #            {
@@ -292,6 +297,100 @@ subtest 'Format keywords query' => sub {
     $keywords_query = $data->_format_keywords_query;
 
     is_deeply($expect, $keywords_query, "Formatted keywords query successfully");
+
+
+    # Testing restricted title and unrestricted text with one value
+    $data = Alchemy::DataNews->new(
+        api_key  => 'TEST',
+        keywords => [
+            {
+                title => '!Obama',
+            },
+            {
+                text => 'Trump',
+            }
+        ],
+    );
+
+    $expect = {
+        'q.enriched.url.title' => '-[Obama]',
+        'q.enriched.url.text'  => 'Trump',
+    };
+
+    $keywords_query = $data->_format_keywords_query;
+
+    is_deeply($expect, $keywords_query, "Formatted keywords query successfully");
+
+
+    # Testing restricted title and unrestricted text with multiple values
+    $data = Alchemy::DataNews->new(
+        api_key  => 'TEST',
+        keywords => [
+            {
+                title => '!Obama',
+            },
+            {
+                text => ['Trump', 'Pence'],
+            }
+        ],
+    );
+
+    $expect = {
+        'q.enriched.url.title' => '-[Obama]',
+        'q.enriched.url.text'  => 'O[Trump^Pence]',
+    };
+
+    $keywords_query = $data->_format_keywords_query;
+
+    is_deeply($expect, $keywords_query, "Formatted keywords query successfully");
+
+
+    # Testing restricted title and unrestricted text with multiple values and custom AND join
+    $data = Alchemy::DataNews->new(
+        api_key  => 'TEST',
+        keywords => [
+            {
+                title => '!Obama',
+            },
+            {
+                text => ['Trump', 'Pence'],
+                join => 'AND',
+            }
+        ],
+    );
+
+    $expect = {
+        'q.enriched.url.title' => '-[Obama]',
+        'q.enriched.url.text'  => 'A[Trump^Pence]',
+    };
+
+    $keywords_query = $data->_format_keywords_query;
+
+    is_deeply($expect, $keywords_query, "Formatted keywords query successfully");
+
+
+    # Testing restricted title and unrestricted text with multiple values and custom restricted AND join
+    $data = Alchemy::DataNews->new(
+        api_key  => 'TEST',
+        keywords => [
+            {
+                title => '!Obama',
+            },
+            {
+                text => ['Trump', 'Pence'],
+                join => '!AND',
+            }
+        ],
+    );
+
+    $expect = {
+        'q.enriched.url.title' => '-[Obama]',
+        'q.enriched.url.text'  => '-A[Trump^Pence]',
+    };
+
+    $keywords_query = $data->_format_keywords_query;
+
+    is_deeply($expect, $keywords_query, "Formatted keywords query successfully");
 };
 
 subtest 'Format taxonomy query' => sub {
@@ -405,7 +504,7 @@ subtest 'Format taxonomy query' => sub {
 
     $expect = {
           'q.enriched.url.enrichedTitle.taxonomy.taxonomy_.label' => 'Movies',
-          'q.enriched.url.taxonomy.taxonomy_.score' => '0.9'
+          'q.enriched.url.taxonomy.taxonomy_.score' => '=0.9'
     };
 
     is_deeply($txn_query, $expect, "Formatted taxonomy query successfully");
@@ -1798,6 +1897,28 @@ subtest 'Complex queries' => sub {
     is_deeply($queries, $expect, "Formatted sentiment and keywords ArrayRef with nested title and text ArrayRef with AND");
 };
 
+subtest '__get_prefix' => sub {
+    $data = Alchemy::DataNews->new(
+        api_key => 'api_key',
+    );
+
+    my $prefix = $data->__get_prefix('AND');
+
+    is($prefix, 'A', 'Got expected prefix for AND');
+
+    $prefix = $data->__get_prefix('OR');
+
+    is($prefix, 'O', 'Got expected prefix for OR');
+
+    $prefix = $data->__get_prefix('!AND');
+
+    is($prefix, '-A', 'Got expected prefix for !AND');
+
+    $prefix = $data->__get_prefix('!OR');
+
+    is($prefix, '-O', 'Got expected prefix for !OR');
+};
+
 subtest '__restrict_query' => sub {
     $data = Alchemy::DataNews->new(
         api_key => 'api_key',
@@ -1857,7 +1978,7 @@ subtest '_error' => sub {
 
     $data->{_fatal} = 1;
 
-    dies_ok { $data->_error('die') }, 'Died ok';
+    dies_ok { $data->_error('die') }, "Died ok";
 
     $data = Alchemy::DataNews->new(
         api_key => 'TEST',

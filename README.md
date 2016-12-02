@@ -546,6 +546,8 @@ Both ```dedup``` and ```dedup_threshold``` default to ```undef```
 
 Read more: https://alchemyapi.readme.io/docs/deduplication
 
+
+
 ```rank``` - Watson's algorithm will also rank news articles as ```Unknown```, ```Low```, ```Medium```, or ```High```. You can specify ```rank``` to filter your results:
 
 ```perl
@@ -582,6 +584,61 @@ rank => { value => 'High' },
 ```
 
 Read more: https://alchemyapi.readme.io/docs/rank-based-search
+
+
+```restrictions``` - You may also specify restrictions on your queries by adding a ```!``` in front of a word. For example:
+
+
+```perl
+$alchemy->search_news({
+    timeframe => {
+        start => {
+            date          => 'now',
+            amount_before => '2',
+            unit          => 'days'
+        },
+        end  => 'now',
+    }
+    keywords => [
+        {
+            title  => ['Net Neutrality', 'Congress']    # Default to 'OR'
+        },
+        {
+            text => '!FCC',
+        },
+    ],
+    rank => 'High',
+});
+```
+
+This query will exclude all articles that contain the word "FCC" in the text.
+
+Currently, there are some limitations on query restrictions. You cannot use ```!``` inside of ```ArrayRefs``` - this will search for the literal string preceded by ```!```
+
+You may specify a restriction within your custom ```AND``` join however. If you want to exclude words on an ```AND/OR``` basis, you can specify the query as:
+
+```perl
+$alchemy->search_news({
+    timeframe => {
+        start => {
+            date          => 'now',
+            amount_before => '2',
+            unit          => 'days'
+        },
+        end  => 'now',
+    }
+    keywords => [
+        {
+            title  => ['Net Neutrality', 'Congress'],
+            join   => '!AND',   # or !OR
+        },
+        {
+            text => '!FCC',
+        },
+    ],
+    rank => 'High',
+});
+```
 
 # INSTANCE METHODS
 
