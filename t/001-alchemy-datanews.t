@@ -8,7 +8,7 @@ use Data::Dumper;
 use_ok 'Alchemy::DataNews';
 
 my $data = Alchemy::DataNews->new(
-    api_key => $ENV{API_KEY} // 'TEST',    # Doesn't run any live queries unless $ENV{AUTHOR_TESTS} is set
+    api_key => $ENV{API_KEY} || 'TEST',    # Doesn't run any live queries unless $ENV{AUTHOR_TESTS} is set
 );                                         # so suppress the API key warning by passing 'TEST'
 
 isa_ok($data, 'Alchemy::DataNews');
@@ -23,25 +23,25 @@ subtest 'Test search_news' => sub {
     plan skip_all => 'Skipping author tests' unless $ENV{AUTHOR_TESTS};
 
     my $result = $data->search_news({
-        sentiment => {
-            score => {
-                value    => '0.5',
-                operator => '=>',
-            },
-            type => 'positive',
-        },
+#        sentiment => {
+#            score => {
+#                value    => '0.5',
+#                operator => '=>',
+#            },
+#            type => 'positive',
+#        },
 #        relations => {
 #            entity => 'Company',
 #            action => 'acquire',
 #        },
 #        entity => { company => 'Apple' },
-#        concept => ['Automotive Industry', 'Politics'],
-        taxonomy => {
-            value      => ['Movies', 'Politics'],
-            confidence => 0.7,
-#            operator   => '=>',
-            join       => 'AND',
-        },
+        concept => ['Automotive Industry', 'Politics'],
+#        taxonomy => {
+#            value      => 'movies',
+#            confidence => 0.7,
+#            operator   => '>',
+#            join       => 'AND',
+#        },
 #        keywords => 'Obama',
 #        keywords => [
 #            {
@@ -115,6 +115,8 @@ subtest 'Test raw output' => sub {
 };
 
 subtest 'Format date query' => sub {
+    diag "Testing format date query";
+
     $data = Alchemy::DataNews->new(
         api_key   => 'TEST',
         timeframe => {
@@ -137,8 +139,27 @@ subtest 'Format date query' => sub {
     is_deeply($date_query, $expect, "Formatted data query successfully");
 };
 
+subtest 'Format fetch query' => sub {
+    my $query = $data->_format_fetch_query('foo');
+
+    is($query, 'foo', "Got a string back from string input");
+
+
+    $query = $data->_format_fetch_query({ foo => 'bar' });
+
+    is($query, 'https://gateway-a.watsonplatform.net/calls/data/GetNews?foo=bar', "Got a URI back from HashRef input");
+
+
+    $query = $data->_format_fetch_query({
+        'q.enriched.url.title' => 'O[Obama^Biden]',
+    });
+
+    is($query, 'https://gateway-a.watsonplatform.net/calls/data/GetNews?q.enriched.url.title=O%5BObama%5EBiden%5D', "Got a URI back from HashRef input");
+};
+
 subtest 'Format keywords query' => sub {
-    # Testing ArrayRefs for title and text
+    diag "Testing ArrayRefs for title and text";
+
     $data = Alchemy::DataNews->new(
         api_key  => 'TEST',
         keywords => [
@@ -161,7 +182,7 @@ subtest 'Format keywords query' => sub {
     is_deeply($expect, $keywords_query, "Formatted keywords query successfully");
 
 
-    # Testing ArrayRefs for title and text with one custom AND join
+    diag "Testing ArrayRefs for title and text with one custom AND join";
     $data = Alchemy::DataNews->new(
         api_key  => 'TEST',
         keywords => [
@@ -183,7 +204,7 @@ subtest 'Format keywords query' => sub {
     $keywords_query = $data->_format_keywords_query;
 
 
-    # Testing ArrayRefs for title and text with two custom AND joins
+    diag "Testing ArrayRefs for title and text with two custom AND joins";
     $data = Alchemy::DataNews->new(
         api_key  => 'TEST',
         keywords => [
@@ -208,7 +229,8 @@ subtest 'Format keywords query' => sub {
     is_deeply($expect, $keywords_query, "Formatted keywords query successfully");
 
 
-    # Testing ArrayRef title and single value text
+    diag "Testing ArrayRef title and single value text";
+
     $data = Alchemy::DataNews->new(
         api_key  => 'TEST',
         keywords => [
@@ -231,7 +253,8 @@ subtest 'Format keywords query' => sub {
     is_deeply($keywords_query, $expect, "Formatted keywords query successfully");
 
 
-    # Testing single values for title and text
+    diag "Testing single values for title and text";
+
     $data = Alchemy::DataNews->new(
         api_key  => 'TEST',
         keywords => [
@@ -254,7 +277,8 @@ subtest 'Format keywords query' => sub {
     is_deeply($expect, $keywords_query, "Formatted keywords query successfully");
 
 
-    # Testing unspecified ArrayRef keyword - should default to text and OR
+    diag "Testing unspecified ArrayRef keyword - should default to text and OR";
+
     $data = Alchemy::DataNews->new(
         api_key  => 'TEST',
         keywords => [ 'Obama', 'Trump'],
@@ -269,7 +293,8 @@ subtest 'Format keywords query' => sub {
     is_deeply($expect, $keywords_query, "Formatted keywords query successfully");
 
 
-    # Testing unspecified single value keyword - should default to text
+    diag "Testing unspecified single value keyword - should default to text";
+
     $data = Alchemy::DataNews->new(
         api_key  => 'TEST',
         keywords => 'Obama',
@@ -284,7 +309,8 @@ subtest 'Format keywords query' => sub {
     is_deeply($expect, $keywords_query, "Formatted keywords query successfully");
 
 
-    # Testing unspecified restricted value keyword - should default to text
+    diag "Testing unspecified restricted value keyword - should default to text";
+
     $data = Alchemy::DataNews->new(
         api_key  => 'TEST',
         keywords => '!Obama',
@@ -299,7 +325,8 @@ subtest 'Format keywords query' => sub {
     is_deeply($expect, $keywords_query, "Formatted keywords query successfully");
 
 
-    # Testing restricted title and unrestricted text with one value
+    diag "Testing restricted title and unrestricted text with one value";
+
     $data = Alchemy::DataNews->new(
         api_key  => 'TEST',
         keywords => [
@@ -322,7 +349,8 @@ subtest 'Format keywords query' => sub {
     is_deeply($expect, $keywords_query, "Formatted keywords query successfully");
 
 
-    # Testing restricted title and unrestricted text with multiple values
+    diag "Testing restricted title and unrestricted text with multiple values";
+
     $data = Alchemy::DataNews->new(
         api_key  => 'TEST',
         keywords => [
@@ -345,7 +373,8 @@ subtest 'Format keywords query' => sub {
     is_deeply($expect, $keywords_query, "Formatted keywords query successfully");
 
 
-    # Testing restricted title and unrestricted text with multiple values and custom AND join
+    diag "Testing restricted title and unrestricted text with multiple values and custom AND join";
+
     $data = Alchemy::DataNews->new(
         api_key  => 'TEST',
         keywords => [
@@ -369,7 +398,8 @@ subtest 'Format keywords query' => sub {
     is_deeply($expect, $keywords_query, "Formatted keywords query successfully");
 
 
-    # Testing restricted title and unrestricted text with multiple values and custom restricted AND join
+    diag "Testing restricted title and unrestricted text with multiple values and custom restricted AND join";
+
     $data = Alchemy::DataNews->new(
         api_key  => 'TEST',
         keywords => [
@@ -394,7 +424,9 @@ subtest 'Format keywords query' => sub {
 };
 
 subtest 'Format taxonomy query' => sub {
-    # Testing ArrayRef taxonomy
+
+    diag "Testing ArrayRef taxonomy";
+
     $data = Alchemy::DataNews->new(
         api_key  => 'TEST',
         taxonomy => ['Movies', 'Politics'],
@@ -409,7 +441,8 @@ subtest 'Format taxonomy query' => sub {
     is_deeply($txn_query, $expect, "Formatted taxonomy query successfully");
 
 
-    # Testing ArrayRef taxonomy with custom AND join
+    diag "Testing ArrayRef taxonomy with custom AND join";
+
     $data = Alchemy::DataNews->new(
         api_key  => 'TEST',
         taxonomy => ['Movies', 'Politics'],
@@ -425,7 +458,8 @@ subtest 'Format taxonomy query' => sub {
     is_deeply($txn_query, $expect, "Formatted taxonomy query successfully");
 
 
-    # Testing single value taxonomy
+    diag "Testing single value taxonomy";
+
     $data = Alchemy::DataNews->new(
         api_key  => 'TEST',
         taxonomy => 'Movies',
@@ -440,7 +474,8 @@ subtest 'Format taxonomy query' => sub {
     is_deeply($txn_query, $expect, "Formatted taxonomy query successfully");
 
 
-    # Testing taxonomy HashRef single value
+    diag "Testing taxonomy HashRef single value";
+
     $data = Alchemy::DataNews->new(
         api_key  => 'TEST',
         taxonomy => {
@@ -456,7 +491,9 @@ subtest 'Format taxonomy query' => sub {
 
     is_deeply($txn_query, $expect, "Formatted taxonomy query successfully");
 
-    # Testing taxonomy HashRef with mutiple values
+
+    diag "Testing taxonomy HashRef with mutiple values";
+
     $data = Alchemy::DataNews->new(
         api_key   => 'TEST',
         taxonomy  => {
@@ -473,7 +510,8 @@ subtest 'Format taxonomy query' => sub {
     is_deeply($txn_query, $expect, "Formatted taxonomy query successfully");
 
 
-    # Testing taxonomy HashRef with mutiple values and nested custom AND join
+    diag "Testing taxonomy HashRef with mutiple values and nested custom AND join";
+
     $data = Alchemy::DataNews->new(
         api_key   => 'TEST',
         taxonomy  => {
@@ -491,7 +529,8 @@ subtest 'Format taxonomy query' => sub {
     is_deeply($txn_query, $expect, "Formatted taxonomy query successfully");
 
 
-    # Testing taxonomy HashRef with one value and confidence score and no operator
+    diag "Testing taxonomy HashRef with one value and confidence score and no operator";
+
     $data = Alchemy::DataNews->new(
         api_key   => 'TEST',
         taxonomy  => {
@@ -510,7 +549,8 @@ subtest 'Format taxonomy query' => sub {
     is_deeply($txn_query, $expect, "Formatted taxonomy query successfully");
 
 
-    # Testing taxonomy HashRef with one value and confidence score and >
+    diag "Testing taxonomy HashRef with one value and confidence score and >";
+
     $data = Alchemy::DataNews->new(
         api_key   => 'TEST',
         taxonomy  => {
@@ -530,7 +570,8 @@ subtest 'Format taxonomy query' => sub {
     is_deeply($txn_query, $expect, "Formatted taxonomy query successfully");
 
 
-    # Testing taxonomy HashRef with multiple values and confidence score and >
+    diag "Testing taxonomy HashRef with multiple values and confidence score and >";
+
     $data = Alchemy::DataNews->new(
         api_key   => 'TEST',
         taxonomy  => {
@@ -550,7 +591,8 @@ subtest 'Format taxonomy query' => sub {
     is_deeply($txn_query, $expect, "Formatted taxonomy query successfully");
 
 
-    # Testing taxonomy HashRef with multiple values and confidence score and >
+    diag "Testing taxonomy HashRef with multiple values and confidence score and >";
+
     $data = Alchemy::DataNews->new(
         api_key   => 'TEST',
         taxonomy  => {
@@ -571,7 +613,8 @@ subtest 'Format taxonomy query' => sub {
     is_deeply($txn_query, $expect, "Formatted taxonomy query successfully");
 
 
-    # Testing taxonomy HashRef with one value and confidence score and <
+    diag "Testing taxonomy HashRef with one value and confidence score and <";
+
     $data = Alchemy::DataNews->new(
         api_key   => 'TEST',
         taxonomy  => {
@@ -591,7 +634,8 @@ subtest 'Format taxonomy query' => sub {
     is_deeply($txn_query, $expect, "Formatted taxonomy query successfully");
 
 
-    # Testing taxonomy HashRef with one value and confidence score and <
+    diag "Testing taxonomy HashRef with one value and confidence score and <";
+
     $data = Alchemy::DataNews->new(
         api_key   => 'TEST',
         taxonomy  => {
@@ -611,7 +655,8 @@ subtest 'Format taxonomy query' => sub {
     is_deeply($txn_query, $expect, "Formatted taxonomy query successfully");
 
 
-    # Testing taxonomy HashRef with one value, custom AND join, confidence score and <
+    diag "Testing taxonomy HashRef with one value, custom AND join, confidence score and <";
+
     $data = Alchemy::DataNews->new(
         api_key   => 'TEST',
         taxonomy  => {
@@ -632,7 +677,8 @@ subtest 'Format taxonomy query' => sub {
     is_deeply($txn_query, $expect, "Formatted taxonomy query successfully");
 
 
-    # Testing taxonomy HashRef with one value, confidence score and >
+    diag "Testing taxonomy HashRef with one value, confidence score and >";
+
     $data = Alchemy::DataNews->new(
         api_key   => 'TEST',
         taxonomy  => {
@@ -652,7 +698,8 @@ subtest 'Format taxonomy query' => sub {
     is_deeply($txn_query, $expect, "Formatted taxonomy query successfully");
 
 
-    # Testing taxonomy HashRef with multiple values, confidence score, and >
+    diag "Testing taxonomy HashRef with multiple values, confidence score, and >";
+
     $data = Alchemy::DataNews->new(
         api_key   => 'TEST',
         taxonomy  => {
@@ -672,7 +719,8 @@ subtest 'Format taxonomy query' => sub {
     is_deeply($txn_query, $expect, "Formatted taxonomy query successfully");
 
 
-    # Testing taxonomy HashRef with multiple values, custom AND join, confidence score, and >
+    diag "Testing taxonomy HashRef with multiple values, custom AND join, confidence score, and >";
+
     $data = Alchemy::DataNews->new(
         api_key   => 'TEST',
         taxonomy  => {
@@ -693,8 +741,8 @@ subtest 'Format taxonomy query' => sub {
     is_deeply($txn_query, $expect, "Formatted taxonomy query successfully");
 
 
+    diag "Testing taxonomy HashRef with one value, confidence score and =>";
 
-    # Testing taxonomy HashRef with one value, confidence score and =>
     $data = Alchemy::DataNews->new(
         api_key   => 'TEST',
         taxonomy  => {
@@ -708,13 +756,14 @@ subtest 'Format taxonomy query' => sub {
 
     $expect = {
           'q.enriched.url.enrichedTitle.taxonomy.taxonomy_.label' => 'Movies',
-          'q.enriched.url.taxonomy.taxonomy_.score' => '=>0.9'
+          'q.enriched.url.taxonomy.taxonomy_.score' => '>0.9'
     };
 
     is_deeply($txn_query, $expect, "Formatted taxonomy query successfully");
 
 
-    # Testing taxonomy HashRef with multiple values, confidence score, and =>
+    diag "Testing taxonomy HashRef with multiple values, confidence score, and =>";
+
     $data = Alchemy::DataNews->new(
         api_key   => 'TEST',
         taxonomy  => {
@@ -728,13 +777,14 @@ subtest 'Format taxonomy query' => sub {
 
     $expect = {
           'q.enriched.url.enrichedTitle.taxonomy.taxonomy_.label' => 'O[Movies^Politics]',
-          'q.enriched.url.taxonomy.taxonomy_.score' => '=>0.9'
+          'q.enriched.url.taxonomy.taxonomy_.score' => '>0.9'
     };
 
     is_deeply($txn_query, $expect, "Formatted taxonomy query successfully");
 
 
-    # Testing taxonomy HashRef with multiple values, custom AND join, confidence score, and =>
+    diag "Testing taxonomy HashRef with multiple values, custom AND join, confidence score, and =>";
+
     $data = Alchemy::DataNews->new(
         api_key   => 'TEST',
         taxonomy  => {
@@ -749,13 +799,14 @@ subtest 'Format taxonomy query' => sub {
 
     $expect = {
           'q.enriched.url.enrichedTitle.taxonomy.taxonomy_.label' => 'A[Movies^Politics]',
-          'q.enriched.url.taxonomy.taxonomy_.score' => '=>0.9'
+          'q.enriched.url.taxonomy.taxonomy_.score' => '>0.9'
     };
 
     is_deeply($txn_query, $expect, "Formatted taxonomy query successfully");
 
 
-    # Testing taxonomy HashRef with one value, confidence score and <=
+    diag "Testing taxonomy HashRef with one value, confidence score and <=";
+
     $data = Alchemy::DataNews->new(
         api_key   => 'TEST',
         taxonomy  => {
@@ -769,13 +820,14 @@ subtest 'Format taxonomy query' => sub {
 
     $expect = {
           'q.enriched.url.enrichedTitle.taxonomy.taxonomy_.label' => 'Movies',
-          'q.enriched.url.taxonomy.taxonomy_.score' => '<=0.9'
+          'q.enriched.url.taxonomy.taxonomy_.score' => '<0.9'
     };
 
     is_deeply($txn_query, $expect, "Formatted taxonomy query successfully");
 
 
-    # Testing taxonomy HashRef with multiple values, confidence score, and <=
+    diag "Testing taxonomy HashRef with multiple values, confidence score, and <=";
+
     $data = Alchemy::DataNews->new(
         api_key   => 'TEST',
         taxonomy  => {
@@ -789,13 +841,14 @@ subtest 'Format taxonomy query' => sub {
 
     $expect = {
           'q.enriched.url.enrichedTitle.taxonomy.taxonomy_.label' => 'O[Movies^Politics]',
-          'q.enriched.url.taxonomy.taxonomy_.score' => '<=0.9'
+          'q.enriched.url.taxonomy.taxonomy_.score' => '<0.9'
     };
 
     is_deeply($txn_query, $expect, "Formatted taxonomy query successfully");
 
 
-    # Testing taxonomy HashRef with multiple values, custom AND join, confidence score, and <=
+    diag "Testing taxonomy HashRef with multiple values, custom AND join, confidence score, and <=";
+
     $data = Alchemy::DataNews->new(
         api_key   => 'TEST',
         taxonomy  => {
@@ -810,14 +863,16 @@ subtest 'Format taxonomy query' => sub {
 
     $expect = {
           'q.enriched.url.enrichedTitle.taxonomy.taxonomy_.label' => 'A[Movies^Politics]',
-          'q.enriched.url.taxonomy.taxonomy_.score' => '<=0.9'
+          'q.enriched.url.taxonomy.taxonomy_.score' => '<0.9'
     };
 
     is_deeply($txn_query, $expect, "Formatted taxonomy query successfully");
 };
 
 subtest 'Format entity query' => sub {
-    # Testing single value entity
+
+    diag "Testing single value entity";
+
     $data = Alchemy::DataNews->new(
         api_key => 'TEST',
         entity  => { company => 'Apple' },
@@ -833,7 +888,8 @@ subtest 'Format entity query' => sub {
     is_deeply($entity_query, $expect, "Formatted entity query successfully");
 
 
-    # Testing ArrayRef of entities
+    diag "Testing ArrayRef of entities";
+
     $data = Alchemy::DataNews->new(
         api_key => 'TEST',
         entity  => { company => ['Apple', 'Microsoft'] },
@@ -849,7 +905,8 @@ subtest 'Format entity query' => sub {
     is_deeply($entity_query, $expect, "Formatted entity query successfully");
 
 
-    # Testing ArrayRef of entities with custom AND join
+    diag "Testing ArrayRef of entities with custom AND join";
+
     $data = Alchemy::DataNews->new(
         api_key => 'TEST',
         entity  => { company => ['Apple', 'Microsoft'] },
@@ -867,7 +924,9 @@ subtest 'Format entity query' => sub {
 };
 
 subtest 'Format relations query' => sub {
-    # Testing single value relations query
+
+    diag "Testing single value relations query";
+
     $data = Alchemy::DataNews->new(
         api_key => 'TEST',
         relations => {
@@ -886,7 +945,8 @@ subtest 'Format relations query' => sub {
     is_deeply($rel_query, $expect, "Formatted relations query successfully");
 
 
-    # Testing ArrayRef action relations query
+    diag "Testing ArrayRef action relations query";
+
     $data = Alchemy::DataNews->new(
         api_key => 'TEST',
         relations => {
@@ -905,7 +965,8 @@ subtest 'Format relations query' => sub {
     is_deeply($rel_query, $expect, "Formatted relations query successfully");
 
 
-    # Testing ArrayRef action and ArrayRef entity relations query
+    diag "Testing ArrayRef action and ArrayRef entity relations query";
+
     $data = Alchemy::DataNews->new(
         api_key => 'TEST',
         relations => {
@@ -924,7 +985,8 @@ subtest 'Format relations query' => sub {
     is_deeply($rel_query, $expect, "Formatted relations query successfully");
 
 
-    # Testing ArrayRef action and ArrayRef entity relations query
+    diag "Testing ArrayRef action and ArrayRef entity relations query";
+
     $data = Alchemy::DataNews->new(
         api_key => 'TEST',
         relations => {
@@ -944,7 +1006,8 @@ subtest 'Format relations query' => sub {
     is_deeply($rel_query, $expect, "Formatted relations query successfully");
 
 
-    # Testing single value action and HashRef entity relations query with ArrayRef value and custom AND join
+    diag "Testing single value action and HashRef entity relations query with ArrayRef value and custom AND join";
+
     $data = Alchemy::DataNews->new(
         api_key => 'TEST',
         relations => {
@@ -966,7 +1029,8 @@ subtest 'Format relations query' => sub {
     is_deeply($rel_query, $expect, "Formatted relations query successfully");
 
 
-    # Testing ArrayRef value action and HashRef entity relations query with ArrayRef value and custom AND join
+    diag "Testing ArrayRef value action and HashRef entity relations query with ArrayRef value and custom AND join";
+
     $data = Alchemy::DataNews->new(
         api_key => 'TEST',
         relations => {
@@ -988,7 +1052,8 @@ subtest 'Format relations query' => sub {
     is_deeply($rel_query, $expect, "Formatted relations query successfully");
 
 
-    # Testing HashRef value action and HashRef entity relations query with ArrayRef value and custom AND join
+    diag "Testing HashRef value action and HashRef entity relations query with ArrayRef value and custom AND join";
+
     $data = Alchemy::DataNews->new(
         api_key => 'TEST',
         relations => {
@@ -1010,8 +1075,8 @@ subtest 'Format relations query' => sub {
     is_deeply($rel_query, $expect, "Formatted relations query successfully");
 
 
-    # Testing HashRef with ArrayRef value and custom OR join and HashRef entity relations
-    # query with ArrayRef value and custom AND join
+    diag "Testing HashRef with ArrayRef value and custom OR join and HashRef entity relations query with ArrayRef value and custom AND join";
+
     $data = Alchemy::DataNews->new(
         api_key => 'TEST',
         relations => {
@@ -1036,8 +1101,8 @@ subtest 'Format relations query' => sub {
     is_deeply($rel_query, $expect, "Formatted relations query successfully");
 
 
-    # Testing HashRef with ArrayRef value and custom OR join and HashRef entity relations
-    # query with ArrayRef value and custom AND join
+    diag "Testing HashRef with ArrayRef value and custom OR join and HashRef entity relations query with ArrayRef value and custom AND join";
+
     $data = Alchemy::DataNews->new(
         api_key => 'TEST',
         relations => {
@@ -1063,7 +1128,9 @@ subtest 'Format relations query' => sub {
 };
 
 subtest 'Format concept query' => sub {
-    # Testing one value for concept
+
+    diag "Testing one value for concept";
+
     $data = Alchemy::DataNews->new(
         api_key   => 'TEST',
         concept   => 'Automotive Industry', 
@@ -1086,7 +1153,8 @@ subtest 'Format concept query' => sub {
     is_deeply($concept_query, $expect, "Formatted concept query successfully");
 
 
-    # Testing two values for concept
+    diag "Testing two values for concept";
+
     $data = Alchemy::DataNews->new(
         api_key   => 'TEST',
         concept   => ['Automotive Industry', 'Politics'],
@@ -1109,7 +1177,8 @@ subtest 'Format concept query' => sub {
     is_deeply($concept_query, $expect, "Formatted concept query successfully");
 
 
-    # Testing HashRef as concept value
+    diag "Testing HashRef as concept value";
+
     $data = Alchemy::DataNews->new(
         api_key   => 'TEST',
         concept   => {
@@ -1134,7 +1203,8 @@ subtest 'Format concept query' => sub {
     is_deeply($concept_query, $expect, "Formatted concept query successfully");
 
 
-    # Testing HashRef as concept value with ArrayRef value
+    diag "Testing HashRef as concept value with ArrayRef value";
+
     $data = Alchemy::DataNews->new(
         api_key   => 'TEST',
         concept   => {
@@ -1159,7 +1229,8 @@ subtest 'Format concept query' => sub {
     is_deeply($concept_query, $expect, "Formatted concept query successfully");
 
 
-    # Testing HashRef as concept value with ArrayRef value and custom AND join
+    diag "Testing HashRef as concept value with ArrayRef value and custom AND join";
+
     $data = Alchemy::DataNews->new(
         api_key   => 'TEST',
         concept   => {
@@ -1186,7 +1257,9 @@ subtest 'Format concept query' => sub {
 };
 
 subtest 'Format sentiment query' => sub {
-    # Testing one value for type and =>
+
+    diag "Testing one value for type and =>";
+
     $data = Alchemy::DataNews->new(
         api_key => 'TEST',
         sentiment => {
@@ -1207,7 +1280,8 @@ subtest 'Format sentiment query' => sub {
     is_deeply($sent_query, $expect, "Formatted sentiment query succesfully");
 
 
-    # Testing 2 values for type and =>
+    diag "Testing 2 values for type and =>";
+
     $data = Alchemy::DataNews->new(
         api_key => 'TEST',
         sentiment => {
@@ -1228,7 +1302,8 @@ subtest 'Format sentiment query' => sub {
     is_deeply($sent_query, $expect, "Formatted sentiment query succesfully");
 
 
-    # Testing one value for type and <=
+    diag "Testing one value for type and <=";
+
     $data = Alchemy::DataNews->new(
         api_key => 'TEST',
         sentiment => {
@@ -1249,7 +1324,8 @@ subtest 'Format sentiment query' => sub {
     is_deeply($sent_query, $expect, "Formatted sentiment query succesfully");
 
 
-    # Testing two values for type and <=
+    diag "Testing two values for type and <=";
+
     $data = Alchemy::DataNews->new(
         api_key => 'TEST',
         sentiment => {
@@ -1270,7 +1346,8 @@ subtest 'Format sentiment query' => sub {
     is_deeply($sent_query, $expect, "Formatted sentiment query succesfully");
 
 
-    # Testing one value for type and <
+    diag "Testing one value for type and <";
+
     $data = Alchemy::DataNews->new(
         api_key => 'TEST',
         sentiment => {
@@ -1291,7 +1368,8 @@ subtest 'Format sentiment query' => sub {
     is_deeply($sent_query, $expect, "Formatted sentiment query succesfully");
 
 
-    # Testing two values for type and <
+    diag "Testing two values for type and <";
+
     $data = Alchemy::DataNews->new(
         api_key => 'TEST',
         sentiment => {
@@ -1312,7 +1390,8 @@ subtest 'Format sentiment query' => sub {
     is_deeply($sent_query, $expect, "Formatted sentiment query succesfully");
 
 
-    # Testing one value for type and >
+    diag "Testing one value for type and >";
+
     $data = Alchemy::DataNews->new(
         api_key => 'TEST',
         sentiment => {
@@ -1333,7 +1412,8 @@ subtest 'Format sentiment query' => sub {
     is_deeply($sent_query, $expect, "Formatted sentiment query succesfully");
 
 
-    # Testing two values for type and <
+    diag "Testing two values for type and <";
+
     $data = Alchemy::DataNews->new(
         api_key => 'TEST',
         sentiment => {
@@ -1354,7 +1434,8 @@ subtest 'Format sentiment query' => sub {
     is_deeply($sent_query, $expect, "Formatted sentiment query succesfully");
 
 
-    # Testing one value for type and >
+    diag "Testing one value for type and >";
+
     $data = Alchemy::DataNews->new(
         api_key => 'TEST',
         sentiment => {
@@ -1375,7 +1456,8 @@ subtest 'Format sentiment query' => sub {
     is_deeply($sent_query, $expect, "Formatted sentiment query succesfully");
 
 
-    # Testing two values for type and <
+    diag "Testing two values for type and <";
+
     $data = Alchemy::DataNews->new(
         api_key => 'TEST',
         sentiment => {
@@ -1397,7 +1479,9 @@ subtest 'Format sentiment query' => sub {
 };
 
 subtest 'Testing rank queries' => sub {
-    # Testing one rank: High
+
+    diag "Testing one rank: High";
+
     $data = Alchemy::DataNews->new(
         api_key => 'TEST',
         rank    => 'High',
@@ -1412,7 +1496,8 @@ subtest 'Testing rank queries' => sub {
     is_deeply($rank_query, $expect, "Formatted rank query successfully");
 
 
-    # Testing one rank: Medium
+    diag "Testing one rank: Medium";
+
     $data = Alchemy::DataNews->new(
         api_key => 'TEST',
         rank    => 'Medium',
@@ -1427,7 +1512,8 @@ subtest 'Testing rank queries' => sub {
     is_deeply($rank_query, $expect, "Formatted rank query successfully");
 
 
-    # Testing one rank: Low
+    diag "Testing one rank: Low";
+
     $data = Alchemy::DataNews->new(
         api_key => 'TEST',
         rank    => 'Low',
@@ -1442,7 +1528,8 @@ subtest 'Testing rank queries' => sub {
     is_deeply($rank_query, $expect, "Formatted rank query successfully");
 
 
-    # Testing one rank: Unknown
+    diag "Testing one rank: Unknown";
+
     $data = Alchemy::DataNews->new(
         api_key => 'TEST',
         rank    => 'Unknown',
@@ -1457,7 +1544,8 @@ subtest 'Testing rank queries' => sub {
     is_deeply($rank_query, $expect, "Formatted rank query successfully");
 
 
-    # Testing multiple ranks: Unknown, High
+    diag "Testing multiple ranks: Unknown, High";
+
     $data = Alchemy::DataNews->new(
         api_key => 'TEST',
         rank    => ['Unknown', 'High']
@@ -1472,7 +1560,8 @@ subtest 'Testing rank queries' => sub {
     is_deeply($rank_query, $expect, "Formatted rank query successfully");
 
 
-    # Testing multiple ranks: Unknown, Medium
+    diag "Testing multiple ranks: Unknown, Medium";
+
     $data = Alchemy::DataNews->new(
         api_key => 'TEST',
         rank    => ['Unknown', 'Medium']
@@ -1487,7 +1576,8 @@ subtest 'Testing rank queries' => sub {
     is_deeply($rank_query, $expect, "Formatted rank query successfully");
 
 
-    # Testing multiple ranks: Unknown, Low
+    diag "Testing multiple ranks: Unknown, Low";
+
     $data = Alchemy::DataNews->new(
         api_key => 'TEST',
         rank    => ['Unknown', 'Low']
@@ -1502,7 +1592,8 @@ subtest 'Testing rank queries' => sub {
     is_deeply($rank_query, $expect, "Formatted rank query successfully");
 
 
-    # Testing multiple ranks: High, Medium
+    diag "Testing multiple ranks: High, Medium";
+
     $data = Alchemy::DataNews->new(
         api_key => 'TEST',
         rank    => ['High', 'Medium']
@@ -1517,7 +1608,8 @@ subtest 'Testing rank queries' => sub {
     is_deeply($rank_query, $expect, "Formatted rank query successfully");
 
 
-    # Testing multiple ranks: High, Low
+    diag "Testing multiple ranks: High, Low";
+
     $data = Alchemy::DataNews->new(
         api_key => 'TEST',
         rank    => ['High', 'Low']
@@ -1532,7 +1624,8 @@ subtest 'Testing rank queries' => sub {
     is_deeply($rank_query, $expect, "Formatted rank query successfully");
 
 
-    # Testing multiple ranks: High, Low
+    diag "Testing multiple ranks: High, Low";
+
     $data = Alchemy::DataNews->new(
         api_key => 'TEST',
         rank    => ['High', 'Unknown']
@@ -1547,7 +1640,8 @@ subtest 'Testing rank queries' => sub {
     is_deeply($rank_query, $expect, "Formatted rank query successfully");
 
 
-    # Testing multiple ranks: Medium, Low
+    diag "Testing multiple ranks: Medium, Low";
+
     $data = Alchemy::DataNews->new(
         api_key => 'TEST',
         rank    => ['Medium', 'Low']
@@ -1562,7 +1656,8 @@ subtest 'Testing rank queries' => sub {
     is_deeply($rank_query, $expect, "Formatted rank query successfully");
 
 
-    # Testing multiple ranks: Low, Medium
+    diag "Testing multiple ranks: Low, Medium";
+
     $data = Alchemy::DataNews->new(
         api_key => 'TEST',
         rank    => ['Low', 'Medium']
@@ -1577,7 +1672,8 @@ subtest 'Testing rank queries' => sub {
     is_deeply($rank_query, $expect, "Formatted rank query successfully");
 
 
-    # Testing one value for HashRef: High
+    diag "Testing one value for HashRef: High";
+
     $data = Alchemy::DataNews->new(
         api_key => 'TEST',
         rank    => { value => 'High' },
@@ -1592,7 +1688,8 @@ subtest 'Testing rank queries' => sub {
     is_deeply($rank_query, $expect, "Formatted rank query successfully");
 
 
-    # Testing one value for HashRef: Medium
+    diag "Testing one value for HashRef: Medium";
+
     $data = Alchemy::DataNews->new(
         api_key => 'TEST',
         rank    => { value => 'Medium' },
@@ -1607,7 +1704,8 @@ subtest 'Testing rank queries' => sub {
     is_deeply($rank_query, $expect, "Formatted rank query successfully");
 
 
-    # Testing one value for HashRef: Low
+    diag "Testing one value for HashRef: Low";
+
     $data = Alchemy::DataNews->new(
         api_key => 'TEST',
         rank    => { value => 'Low' },
@@ -1622,7 +1720,8 @@ subtest 'Testing rank queries' => sub {
     is_deeply($rank_query, $expect, "Formatted rank query successfully");
 
 
-    # Testing one value for HashRef: Unknown
+    diag "Testing one value for HashRef: Unknown";
+
     $data = Alchemy::DataNews->new(
         api_key => 'TEST',
         rank    => { value => 'Unknown' },
@@ -1637,7 +1736,8 @@ subtest 'Testing rank queries' => sub {
     is_deeply($rank_query, $expect, "Formatted rank query successfully");
 
 
-    # Testing two values for HashRef: High, Medium
+    diag "Testing two values for HashRef: High, Medium";
+
     $data = Alchemy::DataNews->new(
         api_key => 'TEST',
         rank    => { value => ['High', 'Medium'] },
@@ -1653,7 +1753,9 @@ subtest 'Testing rank queries' => sub {
 };
 
 subtest 'Complex queries' => sub {
-    # Testing one text keyword, and multiple sentiment types
+
+    diag "Testing one text keyword, and multiple sentiment types";
+
     $data = Alchemy::DataNews->new(
         api_key => 'TEST',
         sentiment => {
@@ -1676,7 +1778,8 @@ subtest 'Complex queries' => sub {
     is_deeply($queries, $expect, "Formatted keywords and sentiment correctly"); 
 
 
-    # Testing one text keyword, one title keyword, and multiple sentiment types
+    diag "Testing one text keyword, one title keyword, and multiple sentiment types";
+
     $data = Alchemy::DataNews->new(
         api_key => 'TEST',
         sentiment => {
@@ -1707,7 +1810,8 @@ subtest 'Complex queries' => sub {
     is_deeply($queries, $expect, "Formatted sentiment and keywords ArrayRef successfully");
 
 
-    # Testing mutiple text keywords, one title keyword, and multiple sentiment types
+    diag "Testing mutiple text keywords, one title keyword, and multiple sentiment types";
+
     $data = Alchemy::DataNews->new(
         api_key => 'TEST',
         sentiment => {
@@ -1738,7 +1842,8 @@ subtest 'Complex queries' => sub {
     is_deeply($queries, $expect, "Formatted sentiment and keywords ArrayRef with nested text ArrayRef");
 
 
-    # Testing mutiple title keywords, one text keyword, and multiple sentiment types
+    diag "Testing mutiple title keywords, one text keyword, and multiple sentiment types";
+
     $data = Alchemy::DataNews->new(
         api_key => 'TEST',
         sentiment => {
@@ -1769,7 +1874,8 @@ subtest 'Complex queries' => sub {
     is_deeply($queries, $expect, "Formatted sentiment and keywords ArrayRef with nested title ArrayRef");
 
 
-    # Testing multiple text and title keywords, multiple sentiment types
+    diag "Testing multiple text and title keywords, multiple sentiment types";
+
     $data = Alchemy::DataNews->new(
         api_key => 'TEST',
         sentiment => {
@@ -1800,7 +1906,8 @@ subtest 'Complex queries' => sub {
     is_deeply($queries, $expect, "Formatted sentiment and keywords ArrayRef with nested title and text ArrayRef");
 
 
-    # Custom AND join on title keyword with multiple sentiment types
+    diag "Custom AND join on title keyword with multiple sentiment types";
+
     $data = Alchemy::DataNews->new(
         api_key => 'TEST',
         sentiment => {
@@ -1832,7 +1939,8 @@ subtest 'Complex queries' => sub {
     is_deeply($queries, $expect, "Formatted sentiment and keywords ArrayRef with nested title and text ArrayRef with AND");
 
 
-    # Custom AND join on title keyword with multiple sentiment types
+    diag "Custom AND join on title keyword with multiple sentiment types";
+
     $data = Alchemy::DataNews->new(
         api_key => 'TEST',
         sentiment => {
@@ -1864,7 +1972,8 @@ subtest 'Complex queries' => sub {
     is_deeply($queries, $expect, "Formatted sentiment and keywords ArrayRef with nested title and text ArrayRef with AND");
 
 
-    # Custom AND join on both title and text keyword with multiple sentiment types
+    diag "Custom AND join on both title and text keyword with multiple sentiment types";
+
     $data = Alchemy::DataNews->new(
         api_key => 'TEST',
         sentiment => {
@@ -1927,12 +2036,12 @@ subtest '__restrict_query' => sub {
     my $restricted = $data->__restrict_query('!Obama');
     my $expect     = '-[Obama]';
 
-    is ($restricted, $expect, "Got expected restructed query");
+    is ($restricted, $expect, "Got expected restricted query");
 
     $restricted = $data->__restrict_query('Obama');
     $expect     = 'Obama';
 
-    is ($restricted, $expect, "Got expected restructed query");
+    is ($restricted, $expect, "Got expected restricted query");
 
 };
 
@@ -1953,7 +2062,8 @@ subtest '_error' => sub {
         # Don't rely on array order, just get rid of the old warning
         shift @warnings;
 
-        # Unsupported custom AND join
+        diag "Unsupported custom AND join";
+
         $data = Alchemy::DataNews->new(
             api_key => 'TEST',
             rank    => {

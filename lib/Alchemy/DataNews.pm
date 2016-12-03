@@ -81,7 +81,7 @@ sub search_news {
 
     $self->{_last_query} = $search_query;
 
-    return $self->_fetch_query($search_query);
+    return $self->fetch_query($search_query);
 }
 
 sub next {
@@ -99,11 +99,15 @@ sub next {
 
     $uri->query_form( %parts, next => $next );
 
-    return $self->_fetch_query($uri->as_string);   
+    return $self->fetch_query($uri->as_string);   
 }
 
-sub _fetch_query {
+sub fetch_query {
     my ($self, $query) = @_;
+
+    confess "Missing required param : query" unless defined $query;
+
+    $query = $self->_format_fetch_query($query);
 
     my $content;
     try {
@@ -125,6 +129,24 @@ sub _fetch_query {
     }
 
     return $content;
+}
+
+sub _format_fetch_query {
+    my ($self, $query) = @_;
+
+    return $query unless ref($query);
+
+    if (ref($query) eq 'HASH') {
+        my $uri = URI->new(ALCHEMY_ENDPOINT);
+           $uri->query_form($query);
+
+        $query = $uri->as_string;
+    }
+    else {
+        confess "Unsupported data type";
+    }
+
+    return $query;
 }
 
 sub _format_queries {
@@ -339,9 +361,15 @@ sub _format_taxonomy_query {
                 my $operator   = $taxonomy->{operator} || '=';
 
                 if (defined $operator and $operator =~ /\S+/) {
-                    $operator = '=>' if $operator eq '>=';
+                    my $ops = {
+                        '<=' => '<',
+                        '=>' => '>', 
+                    };
 
-                    unless ($operator =~ /(?:<|<=|=>|=|>)/) {
+                    # taxonomy queries don't support => or <=
+                    $operator = $ops->{$operator} || $operator;
+
+                    unless ($operator =~ /(?:<|>|=)/) {
                         $self->_error("Invalid operator, cannot format taxonomy query");
                         return undef;
                     }
@@ -360,9 +388,15 @@ sub _format_taxonomy_query {
                 my $operator = $taxonomy->{operator} || '=';
 
                 if (defined $operator and $operator =~ /\S+/) {
-                    $operator = '=>' if $operator eq '>=';
+                    my $ops = {
+                        '<=' => '<',
+                        '=>' => '>', 
+                    };
 
-                    unless ($operator =~ /(?:<|<=|=>|=|>)/) {
+                    # taxonomy queries don't support => or <=
+                    $operator = $ops->{$operator} || $operator;
+
+                    unless ($operator =~ /(?:<|>|=)/) {
                         $self->_error("Invalid operator, cannot format taxonomy query");
                         return undef;
                     }
@@ -1059,15 +1093,13 @@ sub get_return_fields {
         sentiment_title_score                         => 'enriched.url.enrichedTitle.docSentiment.score',                                   # Float
         sentiment_title_mixed                         => 'enriched.url.enrichedTitle.docSentiment.mixed',                                   # Unsigned Int
         taxonomy                                      => 'enriched.url.taxonomy',                                                           # Array
-        taxonomy_label                                => 'enriched.url.taxonomy._label'                                                     # Text
+        taxonomy_label                                => 'enriched.url.taxonomy._label',                                                    # Text
         taxonomy_score                                => 'enriched.url.taxonomy.taxonomy_.score',                                           # Float
         taxonomy_confidence                           => 'enriched.url.taxonomy.taxonomy_.confident',                                       # Text
         taxonomy_title                                => 'enriched.url.enrichedTitle.taxonomy',                                             # Array
         taxonomy_title_label                          => 'enriched.url.enrichedTitle.taxonomy.taxonomy_.label',                             # Text
         taxonomy_title_score                          => 'enriched.url.enrichedTitle.taxonomy.taxonomy_.score',                             # Float
         taxonomy_title_confidence                     => 'enriched.url.enrichedTitle.taxonomy.taxonomy_.confident',                         # Text
-        
-        # https://docs.google.com/spreadsheets/d/1wN0e_fhYCO7GBAneN9xjrNo57OtS_0Tr8FI9xCMfmzM/edit#gid=0
     };
 }
 
