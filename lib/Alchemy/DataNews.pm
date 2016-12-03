@@ -575,7 +575,7 @@ sub _format_relations_query {
             else {
                 $self->_error("Unsupported data type for relations key `action`");
             }
-	    }
+        }
         else {
             $self->_error("Relations query must be a HashRef and have a defined entity and action. Skipping query format");
             return undef;
