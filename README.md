@@ -658,7 +658,7 @@ $alchemy->search_news({
 
 ```search_news``` - formats and sends the REST request to Watson. By default, this method will request JSON from Watson and decode the returned JSON structure
 to a Perl data structure. If you want to keep the raw output, all you need to do is specify ```raw_output => 1``` during construction or method call. Other valid
-output types are ```XML``` and ```RDF``` - these are only available for ```raw_output```.
+output type is ```XML``` - only available for ```raw_output```.
 
 
 ```next``` - returns the next page of results. If there is a next page of results, the previous result will contain key "next" with a token as the value that
