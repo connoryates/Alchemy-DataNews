@@ -9,6 +9,7 @@ use JSON::XS qw(decode_json);
 use Carp qw(cluck confess);
 use URI;
 use Try::Tiny;
+use List::Util qw(first);
 
 our $VERISON = '0.01';
 
@@ -718,27 +719,37 @@ sub _format_rank_query {
 sub _format_return_fields {
     my ($self, $fields) = @_;
 
-    my $return_fields;
+    return 'enriched.url.url,enriched.url.title' unless defined $fields
+      or defined $self->{_return_fields};
 
-    if (defined $fields and ref($fields) and ref($fields) eq 'ARRAY') {
-        my @fields;
+    my @ret_fields = ();
+    my $fields     = $self->get_return_fields;
 
-        foreach my $field (@$fields) {
-            if ($field eq 'title') {
-                push @fields, 'enriched.url.title';
+    if (ref($self->{_return_fields}) and ref($self->{_return_fields}) eq 'ARRAY') {
+        foreach my $rf (@{ $self->{_return_fields} }) {
+            if (first { $rf eq  $_ } keys %$fields) {
+                push @ret_fields, $rf;
             }
-            elsif ($field eq 'keywords') {
-                push @fields, 'enriched.url.keywords';
+            else {
+                push @ret_fields, $fields->{$self->{_return_fields}};
             }
         }
-
-        $return_fields = join ',', @fields;
+    }
+    elsif (!ref($self->{_return_fields})) {
+        if (first { $self->{_return_fields} eq $_ } keys %$fields) {
+            push @ret_fields, $self->{_return_fields};
+        }
+        else {
+            push @ret_fields, $fields->{$self->{_return_fields}};
+        }
     }
     else {
-        $return_fields = 'enriched.url.keywords';
+        $self->_error("Unsupported data structure");
+        cluck "Defaulting to title and url";
+        return 'enriched.url.url,enriched.url.title';
     }
-    
-    return 'enriched.url.url,enriched.url.title';
+
+    return join ',', @ret_fields;
 }
 
 sub _error {

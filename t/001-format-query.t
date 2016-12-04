@@ -88,6 +88,7 @@ subtest 'Format keywords query' => sub {
 
 
     diag "Testing ArrayRefs for title and text with one custom AND join";
+
     $data = Alchemy::DataNews->new(
         api_key  => 'TEST',
         keywords => [
@@ -110,6 +111,7 @@ subtest 'Format keywords query' => sub {
 
 
     diag "Testing ArrayRefs for title and text with two custom AND joins";
+
     $data = Alchemy::DataNews->new(
         api_key  => 'TEST',
         keywords => [

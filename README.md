@@ -89,8 +89,7 @@ $VAR1 = {
 
 # DESCRIPTION
 
-Alchemy::DataNews is a client for IBM Watson's Alchemy DataNews API. The API is a very powerful REST API capable of searching keywords, semantics, tied action words, and word relationships
-across given timeframes. For specific examples of what the API is capable of, please read: http://docs.alchemyapi.com/docs/
+Alchemy::DataNews is a client for IBM Watson's Alchemy DataNews API. The API is a very powerful REST API capable of searching keywords, semantics, tied action words, and word relationships across given timeframes. For specific examples of what the API is capable of, please read: http://docs.alchemyapi.com/docs/
 
 This module will map Perl syntax into the REST parameters that Watson's DataNews API uses - similar to how ```DBIC``` and ```Search::Elasticsearch```  work.
 
@@ -249,7 +248,7 @@ my $alchemy = Alchemy::DataNews->new(
         },
         end => 'now',
     }
-    keywords => ['Net Neutrality', 'FCC']   # Searches text for 'Net Neutrality' and 'FCC'
+    keywords => ['Net Neutrality', 'FCC']   # Searches text for 'Net Neutrality' or 'FCC'
 );
 
 ```
@@ -274,6 +273,19 @@ my $alchemy = Alchemy::DataNews->new(
 
 Also accepts an ArrayRef of values.
 
+Taxonomies are score by their ```confidence``` levels. You filter your taxonomy queries by confidence score:
+
+```perl
+my $alchemy = Alchemy::DataNews->new(
+    api_key   => $API_KEY,
+    taxonomy  => {
+        value      => 'Movies',
+        confidence => 0.9,
+        operator   => '>',
+    }
+);
+
+```
 
 
 ```concept``` - Specify a search query based on given concepts.
@@ -324,9 +336,9 @@ Also accepts an ArrayRef as the nested hash value.
 
 
 
-```relations``` - Specify a "entity" and an "action" to search. An action can be a keyword (like a verb) to refine your searches.
+```relations``` - Specify a "entity" and an "action" to search. An action is a specified word (like a verb) to refine your searches.
 
-For example, see if a company bought anything of interest in the last 2 days:
+For example, see if any company bought anything of interest in the last 2 days:
 
 ```perl
 my $alchemy = Alchemy::DataNews->new(
@@ -347,7 +359,8 @@ my $alchemy = Alchemy::DataNews->new(
 );
 ```
 
-Both nested hash keys will accept an ArrayRef as an argument as well.
+Both hash keys will accept an ArrayRef as an argument as well.
+
 
 ```sentiment``` - Search based on sentiment analysis of the news article:
 
@@ -375,6 +388,7 @@ my $alchemy = Alchemy::DataNews->new(
 The ```score``` key corresponds to Watson's calculated sentiment score, and the opertator applies the given logic.
 
 Valid operators are: ```>=```, ```<=```, ```<```, ```>```, and ```=```
+
 
 # QUERY ATTRIBUTES
 
@@ -684,7 +698,7 @@ while (my $next_results = $alchemy->next) {
 }
 ```
 
-The next token is cached within the ```package``` so if you need to check if there is a nect page available, the following will work:
+The next token is cached within the ```package``` so if you need to check if there is a next page available, the following will work:
 
 ```perl
 $next_results = $alchemy->next if defined $self->{_next};
@@ -699,18 +713,20 @@ Note that you cannot use ```next``` with no args if you return ```raw_output```.
 my $next_results = $alchemy->next(undef, $parsed_token);
 ```
 
+```fetch_query``` - if you don't want to use Perl syntax, you may pass the REST params to ```fetch_query```. You can pass a string or a HashRef of params.
+
 # RETURN FIELDS
 
 The API allows you to specify 400+ return fields. By default, the return fields are: ```enriched.url.url,enriched.url.title``` - or the url and the title of the article. The official list of return fields is documented here: https://docs.google.com/spreadsheets/d/1wN0e_fhYCO7GBAneN9xjrNo57OtS_0Tr8FI9xCMfmzM/edit#gid=0
 
-This module also has a Perl-syntax friendly mappings available. You can view them by dumping:
+This module also has a Perl syntax friendly mappings available. You can view them by dumping:
 
 ```perl
 my $ret_fields = $alchemy->get_return_fields;
 print Dumper $ret_fields;
 ```
 
-So ```return_fields``` can be specified as:
+```return_fields``` can be specified as:
 
 ```perl
 $alchemy->search_news({
