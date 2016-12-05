@@ -10,6 +10,7 @@ use Carp qw(cluck confess);
 use URI;
 use Try::Tiny;
 use List::Util qw(first);
+use Date::Parse;
 
 our $VERISON = '0.01';
 
@@ -210,6 +211,8 @@ sub _format_date_query {
     confess "Missing required param : timeframe"  unless defined $timeframe;
     confess "Arg timeframe must be a HashRef" unless ref($timeframe) eq 'HASH';
 
+    my $date_re = qr/^[0-3]?[0-9].[0-3]?[0-9].(?:[0-9]{2})?[0-9]{2}$/;
+
     my $start = $timeframe->{start};
     
     my $start_string;
@@ -218,13 +221,40 @@ sub _format_date_query {
 
         $start_string = $start->{date} . "-" . $start->{amount_before} . $unit;
     }
+    elsif (defined $start and !ref($start)) {
+        if ($start =~ $date_re) {
+            $start_string = str2time($start) || $self->_error("Invalid date : $start");
+        }
+        else {
+            $start_string = $start;
+        }
+    }
     else {
-        $start_string = "now-2d";
+        $start_string = 'now-2d';
+    }
+
+    my $end_string;
+
+    my $end = $timeframe->{end};
+    if (defined $end and !ref($end)) {
+        if ($end =~ $date_re) {
+            $end_string = str2time($end) || $self->_error("Invalid date : $end");
+        }
+        else {
+            $end_string = $end;
+        }
+    }
+    elsif (defined $end and ref($end)) {
+        $self->_error("Unsupported data type for key end");
+        return undef;
+    }
+    else {
+        $end_string = 'now';
     }
 
     return {
         start => $start_string,
-        end   => $timeframe->{end} || 'now',
+        end   => $end_string,
     };
 }
 

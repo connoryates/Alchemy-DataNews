@@ -42,6 +42,104 @@ subtest 'Format date query' => sub {
     };
 
     is_deeply($date_query, $expect, "Formatted data query successfully");
+
+
+    diag "Testing format date query with start date and now end";
+
+    $data = Alchemy::DataNews->new(
+        api_key   => 'TEST',
+        timeframe => {
+            start => '07/24/2013',
+            end   => 'now',
+        }
+    );
+
+    $date_query = $data->_format_date_query;
+
+    $expect = {
+       end   => 'now',
+       start => '1374624000'
+    };
+
+    is_deeply($date_query, $expect, "Formatted data query successfully");
+
+
+    diag "Testing format date query with start date and no end";
+
+    $data = Alchemy::DataNews->new(
+        api_key   => 'TEST',
+        timeframe => {
+            start => '07/24/2013',
+        }
+    );
+
+    $date_query = $data->_format_date_query;
+
+    $expect = {
+       end   => 'now',
+       start => '1374624000'
+    };
+
+    is_deeply($date_query, $expect, "Formatted data query successfully");
+
+
+    diag "Testing format date query with start date and end date";
+
+    $data = Alchemy::DataNews->new(
+        api_key   => 'TEST',
+        timeframe => {
+            start => '07/24/2013',
+            end   => '07/26/2013',
+        }
+    );
+
+    $date_query = $data->_format_date_query;
+
+    $expect = {
+       end   => '1374796800',
+       start => '1374624000'
+    };
+
+    is_deeply($date_query, $expect, "Formatted data query successfully");
+
+
+    diag "Testing format date query with start UTC seconds and end UTC seconds";
+
+    $data = Alchemy::DataNews->new(
+        api_key   => 'TEST',
+        timeframe => {
+            start => '1374624000',
+            end   => '1374796800',
+        }
+    );
+
+    $date_query = $data->_format_date_query;
+
+    $expect = {
+       end   => '1374796800',
+       start => '1374624000'
+    };
+
+    is_deeply($date_query, $expect, "Formatted data query successfully");
+
+
+    diag "Testing format date query with start UTC seconds and no end";
+
+    $data = Alchemy::DataNews->new(
+        api_key   => 'TEST',
+        timeframe => {
+            start => '1374624000',
+        }
+    );
+
+    $date_query = $data->_format_date_query;
+
+    $expect = {
+       end   => 'now',
+       start => '1374624000'
+    };
+
+    is_deeply($date_query, $expect, "Formatted data query successfully");
 };
 
 subtest 'Format fetch query' => sub {

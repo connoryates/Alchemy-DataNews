@@ -170,6 +170,19 @@ timeframe => {
 Will start the search beginning two days in the past from the current day and end on the current day. You don't have to specify an
 amount before of a unit of time though, you can specify dates as well.
 
+```perl
+timeframe => {
+    start => '08/17/2015',
+    end   => '08/18/2015',
+}
+```
+
+The dates must be formatted as: "mm/dd/yyyy". 
+
+The API doesn't actually expect dates - it expects UTC seconds - so the start and end dates are simply converted to seconds.
+
+You may also pass UTC seconds as the start and end dates.
+
 ```keywords``` - indicates what keywords you want to match in your searches. Takes a ```HashRef```, ```ArrayRef``` of ```HashRefs```, or a ```string```.
 
 You may specify search terms that appear in either the title or the text like so:
