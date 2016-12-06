@@ -854,7 +854,7 @@ sub get_return_fields {
         url                                => 'enriched.url.url',                                             # Text
         title                              => 'enriched.url.title',                                           # Text
         cleaned_title                      => 'enriched.url.cleanedTitle',                                    # Text
-        lanuage                            => 'enriched.url.lanuage',                                         # Text
+        language                           => 'enriched.url.language',                                        # Text
         publication_date                   => 'enriched.url.publicationDate.date',                            # Text
         publication_date_confident         => 'enriched.url.publicationDate.confident',                       # Text
         text                               => 'enriched.url.text',                                            # Text
