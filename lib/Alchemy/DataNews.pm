@@ -229,8 +229,13 @@ sub _format_date_query {
             $start_string = $start;
         }
     }
-    else {
+    elsif (not defined $start) {
+        $self->_error("Missing defined start date");
+        cluck "Defaulting to two days from now";
         $start_string = 'now-2d';
+    }
+    else {
+        confess "Cannot build date query";    
     }
 
     my $end_string;

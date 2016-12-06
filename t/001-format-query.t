@@ -3,7 +3,6 @@ use warnings;
 
 use Test::More;
 use Test::Exception;
-use Data::Dumper;
 
 use_ok 'Alchemy::DataNews';
 
@@ -2089,6 +2088,45 @@ subtest '_error' => sub {
         };
 
         is_deeply($rank_query, $expect, "Formatted rank query successfully");
+
+        shift @warnings;
+
+        diag "Test invalid timeframe - undef start and undef end";
+
+        $data = Alchemy::DataNews->new(
+            api_key  => 'TEST',
+            timeframe => {
+                start    => undef,
+                end      => undef,
+            },
+            keywords => 'Net Neutrality',
+        );
+
+        my $date_query = $data->_format_date_query;
+
+        is(scalar(@warnings), 2, 'Got two warnings');
+        like $warnings[0], qr{Missing defined start date}, 'Warned ok';
+        like $warnings[1], qr{Defaulting to two days from now}, 'Warned ok';
+
+        shift @warnings;
+        shift @warnings;
+
+        diag "Test invalid timeframe - undef start and defined end";
+
+        $data = Alchemy::DataNews->new(
+            api_key   => 'TEST',
+            timeframe => {
+                start    => undef,
+                end      => 'now',
+            },
+            keywords  => 'Net Neutrality',
+        );
+
+        my $date_query = $data->_format_date_query;
+
+        is(scalar(@warnings), 2, 'Got two warnings');
+        like $warnings[0], qr{Missing defined start date}, 'Warned ok';
+        like $warnings[1], qr{Defaulting to two days from now}, 'Warned ok';
     }
 
     $data->{_fatal} = 1;
@@ -2105,6 +2143,36 @@ subtest '_error' => sub {
     );
 
     dies_ok { $data->_format_rank_query }, "Invalid custom AND join killed rank query ok";
+
+
+    diag "Test invalid dates with fatal set";
+
+    $data = Alchemy::DataNews->new(
+        api_key   => 'TEST',
+        timeframe => {
+            start    => undef,
+            end      => undef,
+        },
+        keywords => 'Net Neutrality',
+        fatal    => 1,
+    );
+
+    dies_ok { $data->_format_date_query }, "Undef start and end dates kill date query ok";
+
+
+    diag "Test invalid timeframe - undef start and defined end";
+
+    $data = Alchemy::DataNews->new(
+        api_key  => 'TEST',
+        timeframe => {
+            start    => undef,
+            end      => 'now',
+        },
+        keywords => 'Net Neutrality',
+        fatal    => 1,
+    );
+
+    dies_ok { $data->_format_date_query }, "Undef start and defined end kills date query ok";
 };
 
 done_testing();
