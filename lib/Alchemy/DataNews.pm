@@ -755,30 +755,32 @@ sub _format_rank_query {
 }
 
 sub _format_return_fields {
-    my ($self, $fields) = @_;
+    my ($self, $custom) = @_;
 
-    return 'enriched.url.url,enriched.url.title' unless defined $fields
+    return 'enriched.url.url,enriched.url.title' unless defined $custom
       or defined $self->{_return_fields};
+
+    my $return_fields = $custom || $self->{_return_fields};
 
     my @ret_fields = ();
     my $fields     = $self->get_return_fields;
 
-    if (ref($self->{_return_fields}) and ref($self->{_return_fields}) eq 'ARRAY') {
-        foreach my $rf (@{ $self->{_return_fields} }) {
-            if (first { $rf eq  $_ } keys %$fields) {
+    if (ref($return_fields) and ref($return_fields) eq 'ARRAY') {
+        foreach my $rf (@$return_fields) {
+            if (first { $rf eq  $_ } values %$fields) {
                 push @ret_fields, $rf;
             }
             else {
-                push @ret_fields, $fields->{$self->{_return_fields}};
+                push @ret_fields, $fields->{$rf};
             }
         }
     }
-    elsif (!ref($self->{_return_fields})) {
-        if (first { $self->{_return_fields} eq $_ } keys %$fields) {
-            push @ret_fields, $self->{_return_fields};
+    elsif (!ref($return_fields)) {
+        if (my $mapped = $fields->{$return_fields}) {
+            push @ret_fields, $mapped;
         }
         else {
-            push @ret_fields, $fields->{$self->{_return_fields}};
+            push @ret_fields, $return_fields;
         }
     }
     else {

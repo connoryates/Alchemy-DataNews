@@ -2051,6 +2051,33 @@ subtest '__restrict_query' => sub {
 
 };
 
+subtest 'Test format return fields' => sub {
+    $data = Alchemy::DataNews->new(
+        api_key       => 'TEST',
+        keywords      => 'Net Neutrality',
+        return_fields => [qw(text title url)],
+    );
+
+    my $ret_fields = $data->_format_return_fields;
+
+    my $expect = 'enriched.url.text,enriched.url.title,enriched.url.url';
+
+    is($ret_fields, $expect, "Got expected return fields");
+
+
+    $data = Alchemy::DataNews->new(
+        api_key       => 'TEST',
+        keywords      => 'Net Neutrality',
+        return_fields => 'enriched.url.text,enriched.url.title,enriched.url.url',
+    );
+
+    $ret_fields = $data->_format_return_fields;
+
+    $expect = 'enriched.url.text,enriched.url.title,enriched.url.url';
+
+    is($ret_fields, $expect, "Got expected return fields");
+};
+
 subtest '_error' => sub {
 
     {
