@@ -149,14 +149,16 @@ subtest 'Format fetch query' => sub {
 
     $query = $data->_format_fetch_query({ foo => 'bar' });
 
-    is($query, 'https://gateway-a.watsonplatform.net/calls/data/GetNews?foo=bar', "Got a URI back from HashRef input");
+    is($query, 'https://gateway-a.watsonplatform.net/calls/data/GetNews?api_key=TEST&foo=bar&outputMode=json', "Got a URI back from HashRef input");
 
 
     $query = $data->_format_fetch_query({
         'q.enriched.url.title' => 'O[Obama^Biden]',
     });
 
-    is($query, 'https://gateway-a.watsonplatform.net/calls/data/GetNews?q.enriched.url.title=O%5BObama%5EBiden%5D', "Got a URI back from HashRef input");
+    my $expect = 'https://gateway-a.watsonplatform.net/calls/data/GetNews?api_key=TEST&outputMode=json&q.enriched.url.title=O%5BObama%5EBiden%5D';
+
+    is($query, $expect, "Got a URI back from HashRef input");
 };
 
 subtest 'Format keywords query' => sub {
