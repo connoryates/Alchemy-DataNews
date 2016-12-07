@@ -814,4 +814,8 @@ Connor Yates
 
 # LICENSE
 
-Perl5 - see license file
+Copyright (C) 2016 by Connor Yates
+
+Perl5 License
+
+See license file for details
