@@ -139,6 +139,9 @@ sub _format_fetch_query {
     return $query unless ref($query);
 
     if (ref($query) eq 'HASH') {
+        $query->{outputMode} ||= 'json';
+        $query->{api_key}    ||= $self->{_api_key};
+
         my $uri = URI->new(ALCHEMY_ENDPOINT);
            $uri->query_form($query);
 
