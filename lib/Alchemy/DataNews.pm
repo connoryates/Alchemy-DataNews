@@ -715,8 +715,6 @@ sub _format_rank_query {
     my $rank_regex = qr/^\bHigh\b$|^\bMedium\b$|^\bLow\b$|^\bUnknown\b$/;
 
     if (ref($rank) and ref($rank) eq 'ARRAY') {
-        my $prefix = $self->__get_prefix;
-
         if (grep { !/$rank_regex/ } @$rank) {
             $self->_error("Invalid rank");
             return undef;
@@ -724,15 +722,13 @@ sub _format_rank_query {
 
         my $search_string = join '^', @$rank;
 
-        $params->{$query_string} = $prefix . '[' . $search_string . ']';
+        $params->{$query_string} = 'O[' . $search_string . ']';
     }
     elsif (ref($rank) and ref($rank) eq 'HASH') {
         if (ref($rank->{value}) and ref($rank->{value}) eq 'ARRAY') {
                     
             $self->_error("Custom AND joins are not supported in rank query! Defaulting to OR")
               if defined $rank->{join};
-
-            my $prefix = 'O';
 
             if (grep { !/$rank_regex/ } @{ $rank->{value} }) {
                 $self->_error("Invalid rank");
@@ -741,7 +737,7 @@ sub _format_rank_query {
 
             my $search_string = join '^', @{ $rank->{value} };
 
-            $params->{$query_string} = $prefix . '[' . $search_string . ']';
+            $params->{$query_string} = 'O[' . $search_string . ']';
         }
         else {
             $params->{$query_string} = $rank->{value};
