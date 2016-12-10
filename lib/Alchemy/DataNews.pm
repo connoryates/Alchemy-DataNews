@@ -226,7 +226,11 @@ sub _format_date_query {
     }
     elsif (defined $start and !ref($start)) {
         if ($start =~ $date_re) {
-            $start_string = str2time($start) || $self->_error("Invalid date : $start");
+            try {
+                $start_string = str2time($start);
+            } catch {
+                $self->_error("Invalid date : $start : $_");
+            };
         }
         else {
             $start_string = $start;
@@ -246,7 +250,11 @@ sub _format_date_query {
     my $end = $timeframe->{end};
     if (defined $end and !ref($end)) {
         if ($end =~ $date_re) {
-            $end_string = str2time($end) || $self->_error("Invalid date : $end");
+            try {
+                $end_string = str2time($end);
+            } catch {
+                $self->_error("Invalid date : $end");
+            };
         }
         else {
             $end_string = $end;
